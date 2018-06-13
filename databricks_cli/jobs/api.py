@@ -39,6 +39,9 @@ class JobsApi(object):
     def get_job(self, job_id):
         return self.client.get_job(job_id)
 
+    def update_job(self, job_id):
+        return self.client.update_job(job_id)
+
     def reset_job(self, json):
         return self.client.client.perform_query('POST', '/jobs/reset', data=json)
 
@@ -46,7 +49,25 @@ class JobsApi(object):
         return self.client.run_now(job_id, jar_params, notebook_params, python_params,
                                    spark_submit_params)
 
+<<<<<<< HEAD
     def _list_jobs_by_name(self, name):
         jobs = self.list_jobs()['jobs']
         result = list(filter(lambda job: job['settings']['name'] == name, jobs))
         return result
+=======
+    def has_job(self, full_job_name):
+        jobs = self.list_jobs().get('jobs', [])
+        result = filter(lambda job: job['settings']['name'] == full_job_name, jobs)
+        return len(result) != 0
+
+    def get_job_by_name(self, full_job_name):
+        jobs = self.list_jobs()['jobs']
+        result = filter(lambda job: job['settings']['name'] == full_job_name, jobs)
+        if not result:
+            raise Exception('Cannot not find job: %s' % full_job_name)
+        elif len(result) > 1:
+            raise Exception('Multiple jobs with the same name: %s' % full_job_name)
+        else:
+            return result[0]
+            
+>>>>>>> Some changes ish
