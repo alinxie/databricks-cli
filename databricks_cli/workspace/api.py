@@ -28,6 +28,8 @@ import click
 
 from databricks_cli.dbfs.exceptions import LocalFileExistsException
 from databricks_cli.sdk import WorkspaceService
+from databricks_cli.workspace.types import LanguageClickType, FormatClickType, WorkspaceFormat, \
+    WorkspaceLanguage
 
 DIRECTORY = 'DIRECTORY'
 NOTEBOOK = 'NOTEBOOK'
@@ -80,6 +82,7 @@ class WorkspaceApi(object):
 
     def get_status(self, workspace_path):
         return WorkspaceFileInfo.from_json(self.client.get_status(workspace_path))
+    
 
     def list_objects(self, workspace_path):
         response = self.client.list(workspace_path)
@@ -121,3 +124,56 @@ class WorkspaceApi(object):
 
     def delete(self, workspace_path, is_recursive):
         self.client.delete(workspace_path, is_recursive)
+
+    def import_workspace_dir(self, source_path, target_path, overwrite, exclude_hidden_files):
+        filenames = os.listdir(source_path)
+        if exclude_hidden_files:
+            # for now, just exclude hidden files or directories based on starting '.'
+            filenames = [f for f in filenames if not f.startswith('.')]
+        try:
+            self.mkdirs(target_path)
+        except HTTPError as e:
+            click.echo(e.response.json())
+            return
+        for filename in filenames:
+            cur_src = os.path.join(source_path, filename)
+            # don't use os.path.join here since it will set \ on Windows
+            cur_dst = target_path.rstrip('/') + '/' + filename
+            if os.path.isdir(cur_src):
+                self.import_workspace_dir(cur_src, cur_dst, overwrite, exclude_hidden_files)
+            elif os.path.isfile(cur_src):
+                ext = WorkspaceLanguage.get_extension(cur_src)
+                if ext != '':
+                    cur_dst = cur_dst[:-len(ext)]
+                    (language, file_format) = WorkspaceLanguage.to_language_and_format(cur_src)
+                    self.import_workspace(cur_src, cur_dst, language, file_format, overwrite)
+                    click.echo('{} -> {}'.format(cur_src, cur_dst))
+                else:
+                    extensions = ', '.join(WorkspaceLanguage.EXTENSIONS)
+                    click.echo(('{} does not have a valid extension of {}. Skip this file and ' +
+                                'continue.').format(cur_src, extensions))
+
+    def export_workspace_dir(self, source_path, target_path, overwrite):
+        assert self.get_status(source_path).is_dir, 'The source path must be a directory. {}' \
+        .format(source_path)
+        
+        if os.path.isfile(target_path):
+            click.echo('{} exists as a file. Skipping this subtree {}'
+                       .format(target_path, source_path))
+            return
+        if not os.path.isdir(target_path):
+            os.makedirs(target_path)
+        for obj in self.list_objects(source_path):
+            cur_src = obj.path
+            cur_dst = os.path.join(target_path, obj.basename)
+            if obj.is_dir:
+                self.export_workspace_dir(cur_src, cur_dst, overwrite)
+            elif obj.is_notebook:
+                cur_dst = cur_dst + WorkspaceLanguage.to_extension(obj.language)
+                try:
+                    self.export_workspace(cur_src, cur_dst, WorkspaceFormat.SOURCE, overwrite)
+                    click.echo('{} -> {}'.format(cur_src, cur_dst))
+                except LocalFileExistsException:
+                    click.echo('{} already exists locally as {}. Skip.'.format(cur_src, cur_dst))
+            else:
+                click.echo('{} is neither a dir or a notebook. Skip.'.format(cur_src))
