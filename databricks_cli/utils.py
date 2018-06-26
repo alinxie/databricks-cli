@@ -33,7 +33,7 @@ from databricks_cli.configure.provider import DEFAULT_SECTION
 from databricks_cli.click_types import ContextObject
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-DEBUG_MODE = False
+DEBUG_MODE = False # Remember to set this as False...
 
 
 def eat_exceptions(function):
