@@ -84,7 +84,8 @@ def test_export_dir_helper(workspace_api_mock, tmpdir):
             assert False, 'We shouldn\'t reach this case...'
 
     workspace_api_mock.list_objects = mock.Mock(wraps=_list_objects_mock)
-    cli._export_dir_helper(workspace_api_mock, '/', tmpdir.strpath, False)
+    # cli._export_dir_helper(workspace_api_mock, '/', tmpdir.strpath, False)
+    workspace_api_mock.export_workspace_dir('/', tmpdir.strpath, False)
     # Verify that the directories a, f, g exist.
     assert os.path.isdir(os.path.join(tmpdir.strpath, 'a'))
     assert os.path.isdir(os.path.join(tmpdir.strpath, 'f'))
@@ -124,7 +125,8 @@ def test_import_dir_helper(workspace_api_mock, tmpdir):
         f.write('I don\'t know how to write r')
     with open(os.path.join(tmpdir.strpath, 'a', 'e.sql'), 'wt') as f:
         f.write('select 1+1 from table;')
-    cli._import_dir_helper(workspace_api_mock, tmpdir.strpath, '/', False, False)
+    # cli._import_dir_helper(workspace_api_mock, tmpdir.strpath, '/', False, False)
+    workspace_api_mock.import_workspace_dir(tmpdir.strpath, '/', False, False)
     # Verify that the directories a, f, g exist.
     assert workspace_api_mock.mkdirs.call_count == 4
     # The order of list may be undeterminstic apparently. (It's different in Travis CI)
@@ -165,7 +167,8 @@ def test_import_dir_rstrip(workspace_api_mock, tmpdir):
     os.makedirs(os.path.join(tmpdir.strpath, 'a'))
     with open(os.path.join(tmpdir.strpath, 'a', 'test-py.py'), 'wt'):
         pass
-    cli._import_dir_helper(workspace_api_mock, tmpdir.strpath, '/', False, False)
+    #cli._import_dir_helper(workspace_api_mock, tmpdir.strpath, '/', False, False)
+    workspace_api_mock.import_workspace_dir(tmpdir.strpath, '/', False, False)
     assert workspace_api_mock.mkdirs.call_count == 2
     assert any([ca[0][0] == '/' for ca in workspace_api_mock.mkdirs.call_args_list])
     assert any([ca[0][0] == '/a' for ca in workspace_api_mock.mkdirs.call_args_list])
@@ -190,7 +193,8 @@ def test_import_dir_hidden(workspace_api_mock, tmpdir):
         pass
     with open(os.path.join(tmpdir.strpath, '.ignore', 'ignore.py'), 'wb'):
         pass
-    cli._import_dir_helper(workspace_api_mock, tmpdir.strpath, '/', False, True)
+    #cli._import_dir_helper(workspace_api_mock, tmpdir.strpath, '/', False, True)
+    workspace_api_mock.import_workspace_dir(tmpdir.strpath,  '/', False, True)
     assert workspace_api_mock.mkdirs.call_count == 2
     assert any([ca[0][0] == '/' for ca in workspace_api_mock.mkdirs.call_args_list])
     assert any([ca[0][0] == '/a' for ca in workspace_api_mock.mkdirs.call_args_list])
