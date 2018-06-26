@@ -101,10 +101,11 @@ def download(api_client, config_path, **kwargs):
 =======
 @click.option('--filenames', '-f', help='Comma separated json files.')
 @click.option('--overwrite', '-o', is_flag=True, help='If overwrite existing notebooks in the workspace.')
+@click.option('--save-status', '-s', help='Path to save deploy status JSON file at.')
 @profile_option
 @eat_exceptions
 @provide_api_client
-def deploy(api_client, filenames, overwrite):
+def deploy(api_client, filenames, overwrite, save_status):
     """
     Deploy a stack to the databricks workspace given a JSON stack configuration.
     """
@@ -123,7 +124,7 @@ def deploy(api_client, filenames, overwrite):
     for filename in filenames:
         print('Deploying stack in: ' + filename)
 
-        StackApi(api_client).deploy(filename, overwrite)
+        StackApi(api_client).deploy(filename, overwrite, save_status)
         print('#' * 80 + '\n')
 
 
