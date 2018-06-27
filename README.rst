@@ -46,6 +46,32 @@ version of Python for MacOS does not have this version of TLS built in.
 To use databricks-cli you should install a version of Python which has ``ssl.PROTOCOL_TLSv1_2``.
 For MacOS, the easiest way may be to install Python with `Homebrew <https://brew.sh/>`_.
 
+Stack CLI (Currently Prototyping)
+---------------------------------
+The Databricks Stack CLI will allow management and deployment of Databricks resources (Jobs, Notebooks,
+Libraries, Clusters) through a clearly defined JSON configuration template. The feature is currently
+in prototype stage and can be tried out by installing the CLI from thegithub repository. It is
+recommended that this is done within an isolated environment with a tool like
+[virtualenv](https://virtualenv.pypa.io/en/stable/) . After installing your own environment you can run
+the following commands:
+.. code::
+    git clone https://github.com/alinxie/databricks-cli.git
+    cd databricks_cli
+    pip install -e .
+
+Features
+^^^^^^^^
+[] Stack Deployment and Downloading of Jobs and Workspace Notebooks and Directories
+[] Stack Describe functionality.
+
+Stack Configuration Template JSON Schema
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Deploying a stack
+^^^^^^^^^^^^^^^^^
+.. code::
+  $ databricks stack deploy 
+
 Workspace CLI Examples
 -----------------------
 The implemented commands for the Workspace CLI can be listed by running ``databricks workspace -h``.
