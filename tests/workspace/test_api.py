@@ -76,7 +76,6 @@ def workspace_api():
         workspace_api = api.WorkspaceApi(None)
         yield workspace_api
 
-
 class TestWorkspaceApi(object):
     def test_get_status(self, workspace_api):
         workspace_api.client.get_status.return_value = TEST_JSON_RESPONSE

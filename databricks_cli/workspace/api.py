@@ -29,12 +29,7 @@ from requests.exceptions import HTTPError
 
 from databricks_cli.dbfs.exceptions import LocalFileExistsException
 from databricks_cli.sdk import WorkspaceService
-<<<<<<< HEAD
 from databricks_cli.workspace.types import WorkspaceFormat, WorkspaceLanguage
-=======
-from databricks_cli.workspace.types import LanguageClickType, FormatClickType, WorkspaceFormat, \
-    WorkspaceLanguage
->>>>>>> Some changes ish
 
 DIRECTORY = 'DIRECTORY'
 NOTEBOOK = 'NOTEBOOK'
@@ -87,9 +82,7 @@ class WorkspaceApi(object):
 
     def get_status(self, workspace_path):
         return WorkspaceFileInfo.from_json(self.client.get_status(workspace_path))
-    
-    def get_status_json(self, workspace_path):
-        return self.client.get_status(workspace_path)
+
 
     def list_objects(self, workspace_path):
         response = self.client.list(workspace_path)
@@ -161,12 +154,6 @@ class WorkspaceApi(object):
                                 'continue.').format(cur_src, extensions))
 
     def export_workspace_dir(self, source_path, target_path, overwrite):
-<<<<<<< HEAD
-=======
-        assert self.get_status(source_path).is_dir, 'The source path must be a directory. {}' \
-        .format(source_path)
-        
->>>>>>> Some changes ish
         if os.path.isfile(target_path):
             click.echo('{} exists as a file. Skipping this subtree {}'
                        .format(target_path, source_path))
