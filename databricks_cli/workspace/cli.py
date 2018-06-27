@@ -27,7 +27,11 @@ from tabulate import tabulate
 
 from databricks_cli.utils import eat_exceptions, CONTEXT_SETTINGS
 from databricks_cli.version import print_version_callback, version
+<<<<<<< HEAD
 from databricks_cli.configure.config import provide_api_client, profile_option, debug_option
+=======
+from databricks_cli.configure.config import provide_api_client, profile_option
+>>>>>>> Fixed lint
 from databricks_cli.workspace.api import WorkspaceApi
 from databricks_cli.workspace.types import LanguageClickType, FormatClickType, WorkspaceFormat, \
     WorkspaceLanguage
