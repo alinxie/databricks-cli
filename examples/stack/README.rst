@@ -94,7 +94,7 @@ depending on the type of resource
 
 Job Resource Properties
 ^^^^^^^^^^^^^^^^^^^^^^^
-JSON object of the Databricks [JobSettings](https://docs.databricks.com/api/latest/jobs.html#jobsettings) REST API data structure.
+JSON object of the Databricks `JobSettings <https://docs.databricks.com/api/latest/jobs.html#jobsettings>`_ REST API data structure.
 
 
 Workspace Resource Properties
@@ -104,14 +104,14 @@ Workspace Resource Properties
 ``"workspace_path"``: REQUIRED- Matching remote Workspace paths of notebooks or directories.
 
 ``"object_type"``: ``"NOTEBOOK"|"DIRECTORY"`` REQUIRED- This specifies the whether a notebook or directory
-is being managed by the stack. This corresponds with the [ObjectType](https://docs.databricks.com/api/latest/workspace.html#objecttype)
+is being managed by the stack. This corresponds with the `ObjectType <https://docs.databricks.com/api/latest/workspace.html#objecttype>`_
 REST API data structure,
 
 ``"language"``: ``"SCALA"|"PYTHON"|"SQL"|"R"`` OPTIONAL- This is the language of the notebook and should
-only be specified if ``"object_type=="NOTEBOOK"``. This corresponds with the Databricks [Language](https://docs.databricks.com/api/latest/workspace.html#language)
+only be specified if ``"object_type=="NOTEBOOK"``. This corresponds with the Databricks `Language <https://docs.databricks.com/api/latest/workspace.html#language>`_
 REST API data structure. If not provided, the language will be inferred from the file extension.
 
 ``"format"``: ``"SOURCE"|"DBC"|"HTML"|"IPYNB"`` OPTIONAL- This is the export format of the notebook.
-This corresponds with the Databricks [ExportFormat](https://docs.databricks.com/api/latest/workspace.html#exportformat) REST API data structure.
+This corresponds with the Databricks `ExportFormat <https://docs.databricks.com/api/latest/workspace.html#exportformat>`_ REST API data structure.
 If not provided, will default to ``"SOURCE"``.
 
