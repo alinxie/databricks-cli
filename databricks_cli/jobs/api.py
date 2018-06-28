@@ -39,17 +39,17 @@ class JobsApi(object):
     def get_job(self, job_id):
         return self.client.get_job(job_id)
 
+    def update_job(self, job_id):
+        return self.client.update_job(job_id)
+
     def reset_job(self, json):
         return self.client.client.perform_query('POST', '/jobs/reset', data=json)
 
     def run_now(self, job_id, jar_params, notebook_params, python_params, spark_submit_params):
         return self.client.run_now(job_id, jar_params, notebook_params, python_params,
                                    spark_submit_params)
-<<<<<<< HEAD
 
     def _list_jobs_by_name(self, name):
         jobs = self.list_jobs()['jobs']
         result = list(filter(lambda job: job['settings']['name'] == name, jobs))
         return result
-=======
->>>>>>> Undid jobsapi changes

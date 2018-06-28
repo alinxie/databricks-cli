@@ -128,7 +128,11 @@ class DbfsApi(object):
     def move(self, dbfs_src, dbfs_dst):
         self.client.move(dbfs_src.absolute_path, dbfs_dst.absolute_path)
 
+<<<<<<< HEAD
     def _copy_to_dbfs_non_recursive(self, src, dbfs_path_dst, overwrite):
+=======
+    def copy_to_dbfs_non_recursive(self, src, dbfs_path_dst, overwrite):
+>>>>>>> Moved commands from cli to api
         # Munge dst path in case dbfs_path_dst is a dir
         try:
             if self.get_status(dbfs_path_dst).is_dir:
@@ -140,13 +144,21 @@ class DbfsApi(object):
                 raise e
         self.put_file(src, dbfs_path_dst, overwrite)
 
+<<<<<<< HEAD
     def _copy_from_dbfs_non_recursive(self, dbfs_path_src, dst, overwrite):
+=======
+    def copy_from_dbfs_non_recursive(self, dbfs_path_src, dst, overwrite):
+>>>>>>> Moved commands from cli to api
         # Munge dst path in case dst is a dir
         if os.path.isdir(dst):
             dst = os.path.join(dst, dbfs_path_src.basename)
         self.get_file(dbfs_path_src, dst, overwrite)
 
+<<<<<<< HEAD
     def _copy_to_dbfs_recursive(self, src, dbfs_path_dst, overwrite):
+=======
+    def copy_to_dbfs_recursive(self, src, dbfs_path_dst, overwrite):
+>>>>>>> Moved commands from cli to api
         try:
             self.mkdirs(dbfs_path_dst)
         except HTTPError as e:
@@ -157,7 +169,11 @@ class DbfsApi(object):
             cur_src = os.path.join(src, filename)
             cur_dbfs_dst = dbfs_path_dst.join(filename)
             if os.path.isdir(cur_src):
+<<<<<<< HEAD
                 self._copy_to_dbfs_recursive(cur_src, cur_dbfs_dst, overwrite)
+=======
+                self.copy_to_dbfs_recursive(cur_src, cur_dbfs_dst, overwrite)
+>>>>>>> Moved commands from cli to api
             elif os.path.isfile(cur_src):
                 try:
                     self.put_file(cur_src, cur_dbfs_dst, overwrite)
@@ -168,7 +184,11 @@ class DbfsApi(object):
                     else:
                         raise e
 
+<<<<<<< HEAD
     def _copy_from_dbfs_recursive(self, dbfs_path_src, dst, overwrite):
+=======
+    def copy_from_dbfs_recursive(self, dbfs_path_src, dst, overwrite):
+>>>>>>> Moved commands from cli to api
         if os.path.isfile(dst):
             click.echo(
                 '{} exists as a file. Skipping this subtree {}'.format(dst, repr(dbfs_path_src)))
@@ -180,7 +200,11 @@ class DbfsApi(object):
             cur_dbfs_src = dbfs_src_file_info.dbfs_path
             cur_dst = os.path.join(dst, cur_dbfs_src.basename)
             if dbfs_src_file_info.is_dir:
+<<<<<<< HEAD
                 self._copy_from_dbfs_recursive(cur_dbfs_src, cur_dst, overwrite)
+=======
+                self.copy_from_dbfs_recursive(cur_dbfs_src, cur_dst, overwrite)
+>>>>>>> Moved commands from cli to api
             else:
                 try:
                     self.get_file(cur_dbfs_src, cur_dst, overwrite)
@@ -199,6 +223,7 @@ class DbfsApi(object):
                     error_and_quit(
                         ('The local file {} is a directory. You must provide --recursive')
                         .format(src))
+<<<<<<< HEAD
                 self._copy_to_dbfs_non_recursive(src, DbfsPath(dst), overwrite)
             else:
                 if not os.path.isdir(src):
@@ -214,6 +239,23 @@ class DbfsApi(object):
                 if not self.get_status(dbfs_path_src).is_dir:
                     self._copy_from_dbfs_non_recursive(dbfs_path_src, dst, overwrite)
                 self._copy_from_dbfs_recursive(dbfs_path_src, dst, overwrite)
+=======
+                self.copy_to_dbfs_non_recursive(src, DbfsPath(dst), overwrite)
+            else:
+                if not os.path.isdir(src):
+                    self.copy_to_dbfs_non_recursive(src, DbfsPath(dst), overwrite)
+                    return
+                self.copy_to_dbfs_recursive(src, DbfsPath(dst), overwrite)
+        # Copy from DBFS in this case
+        elif DbfsPath.is_valid(src) and not DbfsPath.is_valid(dst):
+            if not recursive:
+                self.copy_from_dbfs_non_recursive(DbfsPath(src), dst, overwrite)
+            else:
+                dbfs_path_src = DbfsPath(src)
+                if not self.get_status(dbfs_path_src).is_dir:
+                    self.copy_from_dbfs_non_recursive(dbfs_path_src, dst, overwrite)
+                self.copy_from_dbfs_recursive(dbfs_path_src, dst, overwrite)
+>>>>>>> Moved commands from cli to api
         elif not DbfsPath.is_valid(src) and not DbfsPath.is_valid(dst):
             error_and_quit('Both paths provided are from your local filesystem. '
                            'To use this utility, one of the src or dst must be prefixed '
