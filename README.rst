@@ -65,9 +65,10 @@ the following commands:
 To get the latest features,
 
 .. code::
+
     cd /path/to/repo
     git checkout experimental
-    git pull origin experimental
+    git pull
     pip install -e .
 
 Features

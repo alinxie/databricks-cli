@@ -38,8 +38,7 @@ setup(
         'requests>=2.17.3',
         'tabulate>=0.7.7',
         'six>=1.10.0',
-        'configparser >= 0.3.5',
-        'jsonnet>=0.10.0'
+        'configparser >= 0.3.5'
     ],
     entry_points='''
         [console_scripts]
