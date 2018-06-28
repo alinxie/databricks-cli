@@ -27,11 +27,7 @@ from tabulate import tabulate
 from databricks_cli.utils import eat_exceptions, error_and_quit, CONTEXT_SETTINGS
 from databricks_cli.version import print_version_callback, version
 from databricks_cli.configure.cli import configure_cli
-<<<<<<< HEAD
 from databricks_cli.configure.config import provide_api_client, profile_option, debug_option
-=======
-from databricks_cli.configure.config import provide_api_client, profile_option
->>>>>>> Moved commands from cli to api
 from databricks_cli.dbfs.api import DbfsApi
 from databricks_cli.dbfs.dbfs_path import DbfsPath, DbfsPathClickType
 
