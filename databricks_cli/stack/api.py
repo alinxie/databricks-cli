@@ -26,6 +26,7 @@ import json
 import traceback
 from base64 import b64encode, b64decode
 from datetime import datetime
+import time
 import six
 
 import click
@@ -246,10 +247,10 @@ class StackApi(object):
         resource_deploy_info = {}
         resource_deploy_info[RESOURCE_ID] = resource_id
         resource_deploy_info[RESOURCE_TYPE] = resource_type
-        if six.py3:
+        if six.PY3:
             resource_deploy_info['timestamp'] = datetime.now().timestamp()
-        else:
-            resource_deploy_info['timestamp'] = datetime.now().time()
+        elif six.PY2:
+            resource_deploy_info['timestamp'] = time.mktime(datetime.now().timetuple())
         resource_deploy_info['physical_id'] = physical_id
         resource_deploy_info['deploy_output'] = deploy_output
         return resource_deploy_info
