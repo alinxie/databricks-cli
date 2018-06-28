@@ -74,6 +74,7 @@ class StackApi(object):
         self.api_client = api_client
         self.deployed_resources = {}
         self.deployed_config = {}
+        self.old_cwd = os.getcwd()
 
     def parse_config_file(self, filename):
         """Parse the jsonnet config, it also replace relative local path by actual path."""
@@ -138,12 +139,15 @@ class StackApi(object):
             json.dump(data, f, indent=2)
 
         if custom_path:
+            curr_cwd = os.getcwd()
+            os.chdir(self.old_cwd)
             custom_path_folder = os.path.dirname(os.path.abspath(custom_path))
             if not os.path.exists(custom_path_folder):
                 os.makedirs(custom_path_folder)
             with open(custom_path, 'w+') as f:
-                click.echo('Storing deploy status metadata to %s' % custom_path)
+                click.echo('Storing deploy status metadata to %s' % os.path.abspath(custom_path))
                 json.dump(data, f, indent=2)
+            os.chdir(curr_cwd)
 
     def validate_source_path(self, source_path):
         return os.path.abspath(source_path)
