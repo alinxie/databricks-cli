@@ -39,9 +39,6 @@ class JobsApi(object):
     def get_job(self, job_id):
         return self.client.get_job(job_id)
 
-    def update_job(self, job_id):
-        return self.client.update_job(job_id)
-
     def reset_job(self, json):
         return self.client.client.perform_query('POST', '/jobs/reset', data=json)
 

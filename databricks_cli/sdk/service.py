@@ -169,18 +169,6 @@ class JobsService(object):
         if limit is not None:
             _data['limit'] = limit
         return self.client.perform_query('GET', '/jobs/runs/list', data=_data)
-    
-    def update_job(self, job_id, new_settings=None, fields_to_remove=None):
-        _data = {}
-        if job_id is not None:
-            _data['job_id'] = job_id
-        if new_settings is not None:
-            _data['new_settings'] = new_settings
-            if not isinstance(new_settings, dict):
-                raise TypeError('Expected databricks.JobSettings() or dict for field new_settings')
-        if fields_to_remove is not None:
-            _data['fields_to_remove'] = fields_to_remove
-        return self.client.perform_query('POST', '/jobs/update', data=_data)
         
     def get_run(self, run_id=None):
         _data = {}
