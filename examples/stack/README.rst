@@ -1,11 +1,12 @@
 Stack Configuration Template JSON Schema
-----------------------------------------
+========================================
 
 Example Config
-^^^^^^^^^^^^^^
+--------------
 config.json:
 
 .. code::
+
     {
       "name": "test_stack",
       "resources": [
@@ -77,13 +78,13 @@ config.json:
     }
 
 Outer Fields
-^^^^^^^^^^^^
+------------
 ``"name"``: REQUIRED- The name of the stack. Persistence of
 
 ``"resources"``: REQUIRED-  A list of stack resources. The specification of each resource is in the section below:
 
 Resource Fields
-^^^^^^^^^^^^^^^
+---------------
 ``"id"``: REQUIRED- This is a unique stack identifier of the resource that the stack will use
 
 ``"type"``: ``"job"|"workspace"``- REQUIRED- The type of databricks resource that this resource is.

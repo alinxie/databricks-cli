@@ -102,8 +102,8 @@ Stack Configuration Template JSON Schema
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The stack configuration template is a specification of metadata associated with a resource stack
 along with that of the resources associated with the stack. It is specified in a JSON file. Information
-on the fields of the configuration template is in the [examples page](./examples/stack/README.rst).
-
+on the fields of the configuration template along with a stack example
+is in the [examples page](https://github.com/alinxie/databricks-cli/tree/experimental/examples/stack)
 
 Deploying a Stack
 ^^^^^^^^^^^^^^^^^
