@@ -79,9 +79,10 @@ config.json:
 
 Outer Fields
 ------------
-``"name"``: REQUIRED- The name of the stack. Persistence of
+``"name"``: REQUIRED- The name of the stack. When the stack deployment status is persisted, it will take the
+name of <name>.json
 
-``"resources"``: REQUIRED-  A list of stack resources. The specification of each resource is in the section below:
+``"resources"``: REQUIRED-  A list of stack resources. The specification of the resource fields is in the next section.
 
 Resource Fields
 ---------------
