@@ -54,23 +54,95 @@ in prototype stage and can be tried out by installing the CLI from thegithub rep
 recommended that this is done within an isolated environment with a tool like
 [virtualenv](https://virtualenv.pypa.io/en/stable/) . After installing your own environment you can run
 the following commands:
+
 .. code::
+
     git clone https://github.com/alinxie/databricks-cli.git
     cd databricks_cli
+    git checkout experimental
+    pip install -e .
+
+To get the latest features,
+
+.. code::
+    cd /path/to/repo
+    git checkout experimental
+    git pull origin experimental
     pip install -e .
 
 Features
 ^^^^^^^^
-[] Stack Deployment and Downloading of Jobs and Workspace Notebooks and Directories
-[] Stack Describe functionality.
+    [X] Stack Deployment and Downloading of Jobs and Workspace Notebooks and Directories
+
+    [ ] Stack Deployment and Downloading of DBFS files/directories
+
+    [ ] Stack Describe functionality.
+
+    [ ] Showing Diff's in configurations of Databricks Resources.
+
+    [ ] Stack Deployment of Clusters.
+
+.. code::
+
+    $ databricks stack -h
+    Usage: databricks stack [OPTIONS] COMMAND [ARGS]...
+
+      Utility to deploy and download Databricks resource stacks.
+
+    Options:
+      -v, --version
+      -h, --help      Show this message and exit.
+
+    Commands:
+      deploy    Deploy stack given a JSON configuration of the stack
+      download  Download the resources associated with a databricks
+                resource stack.
 
 Stack Configuration Template JSON Schema
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The stack configuration template is a specification of metadata associated with a resource stack
+along with that of the resources associated with the stack. It is specified in a JSON file. Information
+on the fields of the configuration template is in the [examples page](./examples/stack/README.rst).
 
-Deploying a stack
+
+Deploying a Stack
 ^^^^^^^^^^^^^^^^^
+Running a ``stack deploy`` command on a stack configuration template will "deploy" stack resources onto databricks.
+For jobs, that means creating or updating job configurations, and for notebooks or directories in the
+workspace, that means importing them from a local location (Other sources of notebooks are WIP).
+
+At stack deploy time, a "status" JSON file for the deployment is saved locally as
+``~/databricks/stack/beta/<stack-name>.json`` (Subject to change).
+If you would like to specify another place you want the file stored, you can
+use the ``-s`` option to specify a path.
+
+To overwrite existing notebooks at the target path, the --overwrite flag ``-o`` must be added.
+
 .. code::
-  $ databricks stack deploy 
+
+    $ databricks stack deploy /path/to/config.json -s /path/to/status.json -o
+    Deploying stack at: /path/to/config.json
+    Deploying stack <stack-name>
+
+    Deploying resource
+    ...
+    Storing deploy status metadata to ~/databricks/stack/beta/<stack-name>.json
+    Storing deploy status metadata to result.json
+
+
+Downloading a Stack
+^^^^^^^^^^^^^^^^^^^
+Running a ``stack download`` command on a stack configuration template downloads notebooks
+or directories of notebooks from the workspace that have a local source path and a remote workspace
+path specified in the template.
+
+.. code::
+
+    $ databricks stack download /path/to/config.json -o
+    Downloading stack at: /path/to/config.json
+    Downloading stack <stack-name>
+    ....
+
 
 Workspace CLI Examples
 -----------------------

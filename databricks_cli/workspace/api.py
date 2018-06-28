@@ -98,6 +98,16 @@ class WorkspaceApi(object):
         self.client.mkdirs(workspace_path)
 
     def import_workspace(self, source_path, target_path, language, fmt, is_overwrite):
+        if not is_overwrite:
+            try:
+                remote_file = self.get_status(target_path)
+                if remote_file.language == language:
+                    click.echo('{} already exists on databricks as {}.'.format(source_path,
+                                                                               target_path))
+                    return
+            except HTTPError as e:
+                pass
+
         with open(source_path, 'rb') as f:
             # import_workspace must take content that is typed str.
             content = b64encode(f.read()).decode()
