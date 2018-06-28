@@ -61,8 +61,14 @@ the following commands:
 
 Features
 ^^^^^^^^
-[] Stack Deployment and Downloading of Jobs and Workspace Notebooks and Directories
-[] Stack Describe functionality.
+[x] Stack Deployment and Downloading of Jobs and Workspace Notebooks and Directories
+
+[ ] Stack Deployment of DBFS files/directories and
+
+[ ] Stack Describe functionality.
+
+[ ] Showing Diff
+
 
 Stack Configuration Template JSON Schema
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -70,7 +76,9 @@ Stack Configuration Template JSON Schema
 Deploying a stack
 ^^^^^^^^^^^^^^^^^
 .. code::
-  $ databricks stack deploy 
+  $ databricks stack deploy
+
+S
 
 Workspace CLI Examples
 -----------------------

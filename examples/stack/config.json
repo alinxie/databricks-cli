@@ -1,0 +1,79 @@
+{
+  "name": "test_stack",
+  "resources": [
+    {
+      "id": "job1",
+      "type": "workspace",
+      "properties": {
+        "source_path": "dev/job1.py",
+        "workspace_path": "<WORKSPACE NOTEBOOK PATH GOES HERE>",
+        "language": "PYTHON",
+        "format": "SOURCE",
+        "object_type": "NOTEBOOK"
+      }
+    },
+    {
+      "id": "job2",
+      "type": "workspace",
+      "properties": {
+        "source_path": "dev/job2.py",
+        "workspace_path": "<WORKSPACE NOTEBOOK PATH GOES HERE>",
+        "object_type": "NOTEBOOK"
+      }
+    },
+    {
+      "id": "customer-telemetry",
+      "type": "workspace",
+      "properties": {
+        "source_path": "prod",
+        "workspace_path": "<WORKSPACE DIRECTORY PATH GOES HERE>",
+        "object_type": "DIRECTORY"
+      }
+    },
+    {
+      "id": "client job test 1",
+      "type": "job",
+      "properties": {
+        "name": "Client job test 1",
+        "new_cluster": {
+          "spark_version": "4.0.x-scala2.11",
+          "node_type_id": "r3.xlarge",
+          "aws_attributes": {
+            "availability": "SPOT"
+          },
+          "num_workers": 3
+        },
+        "timeout_seconds": 7200,
+        "max_retries": 1,
+        "schedule": {
+          "quartz_cron_expression": "0 15 22 ? * *",
+          "timezone_id": "America/Los_Angeles"
+        },
+        "notebook_task": {
+          "notebook_path": "<WORKSPACE NOTEBOOK PATH GOES HERE>"
+        }
+      }
+    },
+    {
+      "id": "client job test 2",
+      "type": "job",
+      "properties": {
+        "name": "client job test 2",
+        "new_cluster": {
+          "spark_version": "4.0.x-scala2.11",
+          "node_type_id": "r3.xlarge",
+          "aws_attributes": {
+            "availability": "SPOT"
+          },
+          "num_workers": 1
+        },
+        "timeout_seconds": 1200,
+        "max_retries": 2,
+        "notebook_task": {
+          "notebook_path": "<WORKSPACE NOTEBOOKPATH GOES HERE>"
+        }
+      }
+    }
+  ]
+}
+
