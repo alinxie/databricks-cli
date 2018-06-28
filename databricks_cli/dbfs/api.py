@@ -197,7 +197,7 @@ class DbfsApi(object):
             if not recursive:
                 if os.path.isdir(src):
                     error_and_quit(
-                        ('The local file {} is a directory. You must provide --recursive')
+                        ('The local file {} is a director"y. You must provide --recursive')
                         .format(src))
                 self.copy_to_dbfs_non_recursive(src, DbfsPath(dst), overwrite)
             else:

@@ -220,6 +220,44 @@ class StackApi(object):
 
         return physical_id, deploy_output
 
+    def deploy_dbfs(self, resource_id, resource_properties, physical_id=None, overwrite=False):
+        click.echo("Deploying dbfs asset %s with properties \n%s" % (resource_id, json.dumps(
+            resource_properties, indent=2, sort_keys=True, separators=(',', ': '))))
+        local_path = self.validate_source_path(resource_properties['source_path'])
+        workspace_path = resource_properties['workspace_path']
+
+        lang_fmt = WorkspaceLanguage.to_language_and_format(local_path)  # Guess language and format
+        language, fmt = None, None
+        if lang_fmt:
+            language, fmt = lang_fmt
+
+        if 'language' in resource_properties:
+            language = resource_properties['language']
+        if 'format' in resource_properties:
+            fmt = resource_properties['format']
+
+        object_type = "DIRECTORY" if os.path.isdir(local_path) else "NOTEBOOK"
+        if 'object_type' in resource_properties:
+            object_type = resource_properties['object_type']
+
+        click.echo('sync %s %s to %s' % (object_type, local_path, workspace_path))
+        if object_type == 'NOTEBOOK':
+            self.workspace_client.mkdirs(
+                os.path.dirname(workspace_path))  # Make directory in workspace if not exist
+            self.workspace_client.import_workspace(local_path, workspace_path, language, fmt,
+                                                   overwrite)
+        elif object_type == 'DIRECTORY':
+            self.workspace_client.import_workspace_dir(local_path, workspace_path, overwrite,
+                                                       exclude_hidden_files=True)
+        if physical_id and workspace_path != physical_id['path']:
+            click.echo('Workspace asset %s had path changed from %s to %s' % (resource_id,
+                                                                              physical_id['path'],
+                                                                              workspace_path))
+        physical_id = {'path': workspace_path}
+        deploy_output = self.workspace_client.get_status_json(workspace_path)
+
+        return physical_id, deploy_output
+
     def deploy_resource(self, resource, overwrite):
         resource_id, resource_type, physical_id, deploy_output = None, None, None, None
         try:
@@ -237,6 +275,9 @@ class StackApi(object):
                 physical_id, deploy_output = self.deploy_workspace(resource_id,
                                                                    resource_properties,
                                                                    physical_id, overwrite)
+            else:
+                click.echo("Resource type not found")
+                return None
         except HTTPError as e:
             if DEBUG_MODE:
                 traceback.print_tb(e.__traceback__)
