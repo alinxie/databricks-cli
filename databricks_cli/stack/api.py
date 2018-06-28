@@ -32,7 +32,6 @@ import click
 from requests.exceptions import HTTPError
 
 from databricks_cli.dbfs.exceptions import LocalFileExistsException
-from databricks_cli.sdk import WorkspaceService
 from databricks_cli.jobs.api import JobsApi
 from databricks_cli.workspace.api import WorkspaceApi
 from databricks_cli.version import version as CLI_VERSION
@@ -108,18 +107,24 @@ class StackApi(object):
         return parsed_conf
 
     def get_deployed_resource(self, resource_id, resource_type):
+        """
+        Returns the databricks physical ID of a resource with RESOURCE_ID and RESOURCE_TYPE
+
+        :param resource_id: Internal stack identifier of resource
+        :param resource_type: Resource type of stack resource
+        :return: JSON object of Physical ID of resource on databricks
+        """
         if not self.deployed_resources:
-            return {}, {}
+            return None
         if resource_id in self.deployed_resources:
             deployed_resource = self.deployed_resources[resource_id]
-            deployed_resource_type = deployed_resource['type']
-            deployed_resource_input = deployed_resource['physical_id']
-            deployed_resource_output = deployed_resource['deploy_output']
+            deployed_resource_type = deployed_resource[RESOURCE_TYPE]
+            deployed_physical_id = deployed_resource[RESOURCE_PHYSICAL_ID]
             if resource_type != deployed_resource_type:
                 click.echo("Resource %s is not of type %s", (resource_id, resource_type))
-                return {}, {}
-            return deployed_resource_input, deployed_resource_output
-        return {}, {}
+                return None
+            return deployed_physical_id
+        return None
 
     def store_deploy_metadata(self, stack_name, data, custom_path=None):
         stack_file_path = os.path.join(STACK_DIR, stack_name + ".json")
@@ -131,19 +136,17 @@ class StackApi(object):
             json.dump(data, f, indent=2)
 
         if custom_path:
-            custom_path_folder = os.path.dirname(custom_path)
+            custom_path_folder = os.path.dirname(os.path.abspath(custom_path))
             if not os.path.exists(custom_path_folder):
                 os.makedirs(custom_path_folder)
             with open(custom_path, 'w+') as f:
                 click.echo('Storing deploy status metadata to %s' % custom_path)
                 json.dump(data, f, indent=2)
 
-
     def validate_source_path(self, source_path):
-        return source_path
+        return os.path.abspath(source_path)
 
-    def deploy_job(self, resource_id, job_settings, physical_id=None,
-                   existing_deploy_output=None):
+    def deploy_job(self, resource_id, job_settings, physical_id=None):
         job_id = None
         print("Deploying job %s with settings: \n%s \n" % (resource_id, json.dumps(
             job_settings, indent=2, sort_keys=True, separators=(',', ': '))))
@@ -166,15 +169,14 @@ class StackApi(object):
             click.echo("Creating Job: %s" % resource_id)
             job_id = self.jobs_client.create_job(job_settings)['job_id']
             click.echo("%s Created with ID %s. Link: %s/#job/%s" % (
-            resource_id, str(job_id), self.api_client.host, str(job_id)))
+                resource_id, str(job_id), self.api_client.host, str(job_id)))
 
         physical_id = {'job_id': job_id}
         deploy_output = self.jobs_client.get_job(job_id)
 
         return physical_id, deploy_output
 
-    def deploy_workspace(self, resource_id, resource_properties, physical_id={},
-                         existing_deploy_output={}, overwrite=True):
+    def deploy_workspace(self, resource_id, resource_properties, physical_id=None, overwrite=False):
         click.echo("Deploying workspace asset %s with properties \n%s" % (resource_id, json.dumps(
             resource_properties, indent=2, sort_keys=True, separators=(',', ': '))))
         local_path = self.validate_source_path(resource_properties['source_path'])
@@ -203,7 +205,10 @@ class StackApi(object):
         elif object_type == 'DIRECTORY':
             self.workspace_client.import_workspace_dir(local_path, workspace_path, overwrite,
                                                        exclude_hidden_files=True)
-
+        if physical_id and workspace_path != physical_id['path']:
+            click.echo('Workspace asset %s had path changed from %s to %s' % (resource_id,
+                                                                              physical_id['path'],
+                                                                              workspace_path))
         physical_id = {'path': workspace_path}
         deploy_output = self.workspace_client.get_status_json(workspace_path)
 
@@ -217,17 +222,18 @@ class StackApi(object):
             resource_properties = resource[RESOURCE_PROPERTIES]
 
             # Deployment
-            physical_id, deploy_output = self.get_deployed_resource(resource_id, resource_type)
+            physical_id = self.get_deployed_resource(resource_id, resource_type)
 
             if resource_type == JOBS_TYPE:
                 physical_id, deploy_output = self.deploy_job(resource_id, resource_properties,
-                                                              physical_id, deploy_output)
+                                                             physical_id)
             elif resource_type == WORKSPACE_TYPE:
                 physical_id, deploy_output = self.deploy_workspace(resource_id,
-                                                                    resource_properties,
-                                                                    physical_id, deploy_output,
-                                                                    overwrite)
+                                                                   resource_properties,
+                                                                   physical_id, overwrite)
         except HTTPError as e:
+            if DEBUG_MODE:
+                traceback.print_tb(e.__traceback__)
             click.echo(click.style('Error: %s' % e.response.json(), 'red'))
         except KeyError as e:
             click.echo('Error in config template: Missing %s, skipping resource' % e)
@@ -265,8 +271,7 @@ class StackApi(object):
         deploy_metadata['deployed'] = deployed_resources
         self.store_deploy_metadata(stack_name, deploy_metadata, save_status_path)
 
-    def download_workspace(self, resource_id, resource_properties, physical_id, deploy_output,
-                           overwrite):
+    def download_workspace(self, resource_id, resource_properties, physical_id, overwrite):
         click.echo("Downloading workspace asset %s with properties \n%s" % (resource_id, json.dumps(
             resource_properties, indent=2, sort_keys=True, separators=(',', ': '))))
         local_path = self.validate_source_path(resource_properties['source_path'])
@@ -283,23 +288,26 @@ class StackApi(object):
 
         click.echo('sync %s %s to %s' % (object_type, local_path, workspace_path))
         if object_type == 'NOTEBOOK':
-            self.workspace_client.export_workspace(workspace_path, local_path, fmt, overwrite)
+            try:
+                self.workspace_client.export_workspace(workspace_path, local_path, fmt, overwrite)
+            except LocalFileExistsException:
+                click.echo('{} already exists locally as {}. Skip.'.format(workspace_path,
+                                                                           local_path))
         elif object_type == 'DIRECTORY':
             self.workspace_client.export_workspace_dir(workspace_path, local_path, overwrite)
 
     def download_resource(self, resource, overwrite):
         resource_id, resource_type, physical_id, deploy_output = None, None, None, None
         try:
-            resource_id = resource['id']
-            resource_type = resource['type']
-            resource_properties = resource['properties']
+            resource_id = resource[RESOURCE_ID]
+            resource_type = resource[RESOURCE_TYPE]
+            resource_properties = resource[RESOURCE_PROPERTIES]
 
             # Deployment
-            physical_id, deploy_output = self.get_deployed_resource(resource_id, resource_type)
-
+            physical_id = self.get_deployed_resource(resource_id, resource_type)
+            click.echo()
             if resource_type == WORKSPACE_TYPE:
-                self.download_workspace(resource_id, resource_properties, physical_id,
-                                        deploy_output, overwrite)
+                self.download_workspace(resource_id, resource_properties, physical_id, overwrite)
         except HTTPError as e:
             click.echo("HTTP Error: \n %s" % (json.dumps(e.response)))
         except KeyError as e:
@@ -329,7 +337,8 @@ class StackApi(object):
                 job_url = '%s/#job/%s' % (self.api_client.host, str(job_info['job_id']))
                 jobs.append({'job_name': job['job_name'], 'job_url': job_url, 'job_info': job_info})
             except HTTPError as e:
-                jobs.append({'job_name': job['job_name'], 'job_url': "Job doesn't exist", 'job_info': e.response.json()})
+                jobs.append({'job_name': job['job_name'], 'job_url': "Job doesn't exist",
+                             'job_info': e.response.json()})
         return jobs
 
     def get_workspace_info(self, workspace_paths):
