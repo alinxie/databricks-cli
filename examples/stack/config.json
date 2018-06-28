@@ -6,27 +6,18 @@
       "type": "workspace",
       "properties": {
         "source_path": "dev/job1.py",
-        "workspace_path": "<WORKSPACE NOTEBOOK PATH GOES HERE>",
+        "workspace_path": "/Users/example@example.com/dev/job1",
         "language": "PYTHON",
         "format": "SOURCE",
         "object_type": "NOTEBOOK"
       }
     },
     {
-      "id": "job2",
-      "type": "workspace",
-      "properties": {
-        "source_path": "dev/job2.py",
-        "workspace_path": "<WORKSPACE NOTEBOOK PATH GOES HERE>",
-        "object_type": "NOTEBOOK"
-      }
-    },
-    {
-      "id": "customer-telemetry",
+      "id": "example directory",
       "type": "workspace",
       "properties": {
         "source_path": "prod",
-        "workspace_path": "<WORKSPACE DIRECTORY PATH GOES HERE>",
+        "workspace_path": "/Users/example@example.com/example_dir",
         "object_type": "DIRECTORY"
       }
     },
@@ -50,7 +41,7 @@
           "timezone_id": "America/Los_Angeles"
         },
         "notebook_task": {
-          "notebook_path": "<WORKSPACE NOTEBOOK PATH GOES HERE>"
+          "notebook_path": "/Users/example@example.com/job1"
         }
       }
     },
@@ -70,10 +61,9 @@
         "timeout_seconds": 1200,
         "max_retries": 2,
         "notebook_task": {
-          "notebook_path": "<WORKSPACE NOTEBOOKPATH GOES HERE>"
+          "notebook_path": "/Users/example@example.com/example_dir/prod/common/prodJob"
         }
       }
     }
   ]
 }
-
