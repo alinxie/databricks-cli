@@ -45,26 +45,6 @@ class JobsApi(object):
     def reset_job(self, json):
         return self.client.client.perform_query('POST', '/jobs/reset', data=json)
 
-    def run_now(self, job_id, jar_params=None, notebook_params=None, python_params=None, spark_submit_params=None):
+    def run_now(self, job_id, jar_params, notebook_params, python_params, spark_submit_params):
         return self.client.run_now(job_id, jar_params, notebook_params, python_params,
                                    spark_submit_params)
-
-    def has_job(self, full_job_name):
-        jobs = self.list_jobs().get('jobs', [])
-        result = list(filter(lambda job: job['settings']['name'] == full_job_name, jobs))
-        return len(result) != 0
-
-    def get_job_by_name(self, full_job_name):
-        jobs = self.list_jobs()['jobs']
-        result = list(filter(lambda job: job['settings']['name'] == full_job_name, jobs))
-        if not result:
-            print('Job not found: %s' % full_job_name)
-            #raise Exception('Cannot not find job: %s' % full_job_name)
-            return None
-        elif len(result) > 1:
-            print('Multiple jobs with same name: %s' % full_job_name)
-            #raise Exception('Multiple jobs with the same name: %s' % full_job_name)
-            return None
-        else:
-            return result[0]
-            
