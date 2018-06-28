@@ -24,8 +24,12 @@
 import os
 import json
 from datetime import datetime
+<<<<<<< HEAD
 import time
 import copy
+=======
+import six
+>>>>>>> Fixed timestamp error)
 
 import click
 
@@ -579,7 +583,10 @@ class StackApi(object):
         resource_deploy_info = {}
         resource_deploy_info[RESOURCE_ID] = resource_id
         resource_deploy_info[RESOURCE_TYPE] = resource_type
-        resource_deploy_info['timestamp'] = datetime.now().timestamp()
+        if six.py3:
+            resource_deploy_info['timestamp'] = datetime.now().timestamp()
+        else:
+            resource_deploy_info['timestamp'] = datetime.now().time()
         resource_deploy_info['physical_id'] = physical_id
         resource_deploy_info['deploy_output'] = deploy_output
         return resource_deploy_info
