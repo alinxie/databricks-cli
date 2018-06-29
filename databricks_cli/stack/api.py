@@ -31,20 +31,10 @@ import click
 
 from databricks_cli.jobs.api import JobsApi
 from databricks_cli.workspace.api import WorkspaceApi
-<<<<<<< HEAD
+from databricks_cli.dbfs.api import DbfsApi
 from databricks_cli.workspace.types import WorkspaceLanguage
 from databricks_cli.version import version as CLI_VERSION
 from databricks_cli.stack.exceptions import StackError
-=======
-from databricks_cli.dbfs.api import DbfsApi
-from databricks_cli.version import version as CLI_VERSION
-from databricks_cli.dbfs.dbfs_path import DbfsPath
-from databricks_cli.workspace.types import LanguageClickType, FormatClickType, WorkspaceFormat, \
-    WorkspaceLanguage
-
-DEBUG_MODE = True
-_home = os.path.expanduser('~')
->>>>>>> Quick implementation of dbfs
 
 MS_SEC = 1000
 
@@ -73,115 +63,7 @@ class StackApi(object):
     def __init__(self, api_client):
         self.jobs_client = JobsApi(api_client)
         self.workspace_client = WorkspaceApi(api_client)
-<<<<<<< HEAD
-=======
         self.dbfs_client = DbfsApi(api_client)
-        self.api_client = api_client
-        self.deployed_resources = {}
-        self.deployed_config = {}
-        self.old_cwd = os.getcwd()
-
-    def parse_config_file(self, filename):
-        """Parse the jsonnet config, it also replace relative local path by actual path."""
-        # if filename:
-        # if os.path.isdir(filename):
-        #     if os.path.exists(os.path.join(filename, 'config.json')):
-        #         filename = os.path.join(filename, 'config.json')
-
-        parsed_conf = {}
-        with open(filename, 'r') as f:
-            parsed_conf = json.load(f)
-            local_dir = os.path.dirname(os.path.abspath(filename))
-            os.chdir(local_dir)
-
-        return parsed_conf
-
-    def load_deploy_metadata(self, stack_name, stack_path=None):
-        stack_file_path = os.path.join(STACK_DIR, stack_name + '.json')
-        parsed_conf = {}
-        if os.path.exists(stack_file_path):
-            with open(stack_file_path, 'r') as f:
-                parsed_conf = json.load(f)
-
-        if not parsed_conf and stack_path:
-            with open(stack_path, 'r') as f:
-                parsed_conf = json.load(f)
-
-        if 'resources' in parsed_conf:
-            self.deployed_config = parsed_conf['resources']
-        if 'deployed' in parsed_conf:
-            self.deployed_resources = {resource[RESOURCE_ID]: resource for resource in
-                                       parsed_conf['deployed']}
-        return parsed_conf
-
-    def get_deployed_resource(self, resource_id, resource_type):
-        """
-        Returns the databricks physical ID of a resource with RESOURCE_ID and RESOURCE_TYPE
-
-        :param resource_id: Internal stack identifier of resource
-        :param resource_type: Resource type of stack resource
-        :return: JSON object of Physical ID of resource on databricks
-        """
-        if not self.deployed_resources:
-            return None
-        if resource_id in self.deployed_resources:
-            deployed_resource = self.deployed_resources[resource_id]
-            deployed_resource_type = deployed_resource[RESOURCE_TYPE]
-            deployed_physical_id = deployed_resource[RESOURCE_PHYSICAL_ID]
-            if resource_type != deployed_resource_type:
-                click.echo("Resource %s is not of type %s", (resource_id, resource_type))
-                return None
-            return deployed_physical_id
-        return None
-
-    def store_deploy_metadata(self, stack_name, data, custom_path=None):
-        stack_file_path = os.path.join(STACK_DIR, stack_name + ".json")
-        stack_file_folder = os.path.dirname(stack_file_path)
-        if not os.path.exists(stack_file_folder):
-            os.makedirs(stack_file_folder)
-        with open(stack_file_path, 'w+') as f:
-            click.echo('Storing deploy status metadata to %s' % stack_file_path)
-            json.dump(data, f, indent=2)
-
-        if custom_path:
-            curr_cwd = os.getcwd()
-            os.chdir(self.old_cwd)
-            custom_path_folder = os.path.dirname(os.path.abspath(custom_path))
-            if not os.path.exists(custom_path_folder):
-                os.makedirs(custom_path_folder)
-            with open(custom_path, 'w+') as f:
-                click.echo('Storing deploy status metadata to %s' % os.path.abspath(custom_path))
-                json.dump(data, f, indent=2)
-            os.chdir(curr_cwd)
-
-    def validate_source_path(self, source_path):
-        return os.path.abspath(source_path)
-
-    def deploy_job(self, resource_id, job_settings, physical_id=None):
-        job_id = None
-        print("Deploying job %s with settings: \n%s \n" % (resource_id, json.dumps(
-            job_settings, indent=2, sort_keys=True, separators=(',', ': '))))
-
-        if physical_id:  # job exists
-            if 'job_id' in physical_id:
-                job_id = physical_id['job_id']
-
-        if job_id:
-            try:
-                # Check if persisted job still exists, otherwise create new job.
-                self.jobs_client.get_job(job_id)
-            except HTTPError as e:
-                job_id = None
-
-        if job_id:
-            click.echo("Updating Job: %s" % resource_id)
-            self.jobs_client.reset_job({'job_id': job_id, 'new_settings': job_settings})
-        else:
-            click.echo("Creating Job: %s" % resource_id)
-            job_id = self.jobs_client.create_job(job_settings)['job_id']
-            click.echo("%s Created with ID %s. Link: %s/#job/%s" % (
-                resource_id, str(job_id), self.api_client.host, str(job_id)))
->>>>>>> Quick implementation of dbfs
 
     def deploy(self, config_path, **kwargs):
         """
