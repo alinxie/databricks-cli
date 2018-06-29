@@ -31,11 +31,11 @@ config.json:
           }
         },
         {
-          "id": "job2 in dbfs",
+          "id": "job1 in dbfs",
           "type": "dbfs",
           "properties": {
-            "source_path": "dev/job2.py",
-            "dbfs_path": "dbfs:/alinxie/cli_test/job2.py"
+            "source_path": "dev/job1.py",
+            "dbfs_path": "dbfs:/example_dbfs_dir/job1.py"
           }
         },
         {
