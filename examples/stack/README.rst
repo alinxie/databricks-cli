@@ -114,7 +114,7 @@ Workspace Resource Properties
 
 ``"object_type"``: ``"NOTEBOOK"|"DIRECTORY"`` REQUIRED- This specifies the whether a notebook or directory
 is being managed by the stack. This corresponds with the `ObjectType <https://docs.databricks.com/api/latest/workspace.html#objecttype>`_
-REST API data structure,
+REST API data structure.
 
 ``"language"``: ``"SCALA"|"PYTHON"|"SQL"|"R"`` OPTIONAL- This is the language of the notebook and should
 only be specified if ``"object_type=="NOTEBOOK"``. This corresponds with the Databricks `Language <https://docs.databricks.com/api/latest/workspace.html#language>`_
@@ -128,4 +128,4 @@ DBFS Resource Properties
 ^^^^^^^^^^^^^^^^^^^^^^^^
 ``"source_path"``: REQUIRED- Local source path of DBFS files or directories.
 
-``"workspace_path"``: REQUIRED- Matching remote DBFS path. MUST start with ``dbfs:/`` (ex. ``dbfs:/this/is/a/sample/path``)
+``"dbfs_path"``: REQUIRED- Matching remote DBFS path. MUST start with ``dbfs:/`` (ex. ``dbfs:/this/is/a/sample/path``)
