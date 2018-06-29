@@ -42,7 +42,7 @@ from databricks_cli.dbfs.dbfs_path import DbfsPath
 from databricks_cli.workspace.types import LanguageClickType, FormatClickType, WorkspaceFormat, \
     WorkspaceLanguage
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 _home = os.path.expanduser('~')
 
 # Stack Deployment Status Folder

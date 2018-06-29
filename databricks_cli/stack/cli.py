@@ -36,7 +36,7 @@ from databricks_cli.stack.api import StackApi
 from databricks_cli.workspace.types import LanguageClickType, FormatClickType, WorkspaceFormat, \
     WorkspaceLanguage
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 @click.command(context_settings=CONTEXT_SETTINGS,
                short_help='Deploy stack given a JSON configuration of the stack')
