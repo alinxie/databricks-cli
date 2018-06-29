@@ -269,7 +269,7 @@ class StackApi(object):
                 traceback.print_tb(e.__traceback__)
             click.echo(click.style('Error: %s' % e.response.json(), 'red'))
         except KeyError as e:
-            click.echo('Error in config template: Missing %s, skipping resource' % e)
+            click.echo('Error in config template for resource %s: Missing %s, skipping resource' % (resource_id, e))
         except Exception as e:
             if DEBUG_MODE:
                 traceback.print_tb(e.__traceback__)
@@ -294,7 +294,7 @@ class StackApi(object):
         deploy_metadata = {}
         deploy_metadata['name'] = stack_name
         # deploy_metadata['version'] = parsed_conf['version']
-        # deploy_metadata['cli_version'] = CLI_VERSION
+        deploy_metadata['cli_version'] = CLI_VERSION
         click.echo('Deploying stack %s' % stack_name)
         deploy_metadata['resources'] = parsed_conf['resources']
         deployed_resources = []
@@ -374,7 +374,7 @@ class StackApi(object):
     # WIP- describe stack
     def describe(self, stack_name):
         stored_deploy_metadata = self.load_deploy_metadata(stack_name)
-        click.echo(json.dump(stored_deploy_metadata, indent=2))
+        click.echo(json.dumps(stored_deploy_metadata, indent=2))
         return stored_deploy_metadata
 
     def get_job_info(self, deployed_jobs):
