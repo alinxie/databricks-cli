@@ -92,6 +92,9 @@ class DbfsApi(object):
         json = self.client.get_status(dbfs_path.absolute_path)
         return FileInfo.from_json(json)
 
+    def get_status_json(self, dbfs_path):
+        return self.client.get_status(dbfs_path.absolute_path)
+
     def put_file(self, src_path, dbfs_path, overwrite):
         handle = self.client.create(dbfs_path.absolute_path, overwrite)['handle']
         with open(src_path, 'rb') as local_file:
@@ -197,7 +200,7 @@ class DbfsApi(object):
             if not recursive:
                 if os.path.isdir(src):
                     error_and_quit(
-                        ('The local file {} is a director"y. You must provide --recursive')
+                        ('The local file {} is a directory. You must provide --recursive')
                         .format(src))
                 self.copy_to_dbfs_non_recursive(src, DbfsPath(dst), overwrite)
             else:

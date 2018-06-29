@@ -31,6 +31,14 @@ config.json:
           }
         },
         {
+          "id": "job2 in dbfs",
+          "type": "dbfs",
+          "properties": {
+            "source_path": "dev/job2.py",
+            "dbfs_path": "dbfs:/alinxie/cli_test/job2.py"
+          }
+        },
+        {
           "id": "client job test 1",
           "type": "job",
           "properties": {
@@ -116,3 +124,8 @@ REST API data structure. If not provided, the language will be inferred from the
 This corresponds with the Databricks `ExportFormat <https://docs.databricks.com/api/latest/workspace.html#exportformat>`_ REST API data structure.
 If not provided, will default to ``"SOURCE"``.
 
+DBFS Resource Properties
+^^^^^^^^^^^^^^^^^^^^^^^^
+``"source_path"``: REQUIRED- Local source path of DBFS files or directories.
+
+``"workspace_path"``: REQUIRED- Matching remote DBFS path. MUST start with ``dbfs:/`` (ex. ``dbfs:/this/is/a/sample/path``)

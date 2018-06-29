@@ -22,6 +22,14 @@
       }
     },
     {
+      "id": "job1 in dbfs",
+      "type": "dbfs",
+      "properties": {
+        "source_path": "dev/job1.py",
+        "dbfs_path": "dbfs:/example_dir/job1.py"
+      }
+    },
+    {
       "id": "client job test 1",
       "type": "job",
       "properties": {

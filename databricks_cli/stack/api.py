@@ -36,7 +36,9 @@ from requests.exceptions import HTTPError
 from databricks_cli.dbfs.exceptions import LocalFileExistsException
 from databricks_cli.jobs.api import JobsApi
 from databricks_cli.workspace.api import WorkspaceApi
+from databricks_cli.dbfs.api import DbfsApi
 from databricks_cli.version import version as CLI_VERSION
+from databricks_cli.dbfs.dbfs_path import DbfsPath
 from databricks_cli.workspace.types import LanguageClickType, FormatClickType, WorkspaceFormat, \
     WorkspaceLanguage
 
@@ -71,6 +73,7 @@ class StackApi(object):
     def __init__(self, api_client):
         self.jobs_client = JobsApi(api_client)
         self.workspace_client = WorkspaceApi(api_client)
+        self.dbfs_client = DbfsApi(api_client)
         self.api_client = api_client
         self.deployed_resources = {}
         self.deployed_config = {}
@@ -224,37 +227,16 @@ class StackApi(object):
         click.echo("Deploying dbfs asset %s with properties \n%s" % (resource_id, json.dumps(
             resource_properties, indent=2, sort_keys=True, separators=(',', ': '))))
         local_path = self.validate_source_path(resource_properties['source_path'])
-        workspace_path = resource_properties['workspace_path']
+        dbfs_path = resource_properties['dbfs_path']
 
-        lang_fmt = WorkspaceLanguage.to_language_and_format(local_path)  # Guess language and format
-        language, fmt = None, None
-        if lang_fmt:
-            language, fmt = lang_fmt
+        self.dbfs_client.cp(recursive=True, overwrite=overwrite, src=local_path, dst=dbfs_path)
 
-        if 'language' in resource_properties:
-            language = resource_properties['language']
-        if 'format' in resource_properties:
-            fmt = resource_properties['format']
-
-        object_type = "DIRECTORY" if os.path.isdir(local_path) else "NOTEBOOK"
-        if 'object_type' in resource_properties:
-            object_type = resource_properties['object_type']
-
-        click.echo('sync %s %s to %s' % (object_type, local_path, workspace_path))
-        if object_type == 'NOTEBOOK':
-            self.workspace_client.mkdirs(
-                os.path.dirname(workspace_path))  # Make directory in workspace if not exist
-            self.workspace_client.import_workspace(local_path, workspace_path, language, fmt,
-                                                   overwrite)
-        elif object_type == 'DIRECTORY':
-            self.workspace_client.import_workspace_dir(local_path, workspace_path, overwrite,
-                                                       exclude_hidden_files=True)
-        if physical_id and workspace_path != physical_id['path']:
+        if physical_id and dbfs_path != physical_id['path']:
             click.echo('Workspace asset %s had path changed from %s to %s' % (resource_id,
                                                                               physical_id['path'],
-                                                                              workspace_path))
-        physical_id = {'path': workspace_path}
-        deploy_output = self.workspace_client.get_status_json(workspace_path)
+                                                                              dbfs_path))
+        physical_id = {'path': dbfs_path}
+        deploy_output = self.dbfs_client.get_status_json(DbfsPath(dbfs_path))
 
         return physical_id, deploy_output
 
@@ -275,6 +257,10 @@ class StackApi(object):
                 physical_id, deploy_output = self.deploy_workspace(resource_id,
                                                                    resource_properties,
                                                                    physical_id, overwrite)
+            elif resource_type == DBFS_TYPE:
+                physical_id, deploy_output = self.deploy_dbfs(resource_id,
+                                                              resource_properties,
+                                                              physical_id, overwrite)
             else:
                 click.echo("Resource type not found")
                 return None
@@ -346,6 +332,16 @@ class StackApi(object):
         elif object_type == 'DIRECTORY':
             self.workspace_client.export_workspace_dir(workspace_path, local_path, overwrite)
 
+    def download_dbfs(self, resource_id, resource_properties, physical_id=None, overwrite=False):
+        click.echo("Downloading dbfs asset %s with properties \n%s" % (resource_id, json.dumps(
+            resource_properties, indent=2, sort_keys=True, separators=(',', ': '))))
+        local_path = self.validate_source_path(resource_properties['source_path'])
+        dbfs_path = resource_properties['dbfs_path']
+
+        self.dbfs_client.cp(recursive=True, overwrite=overwrite, src=dbfs_path, dst=local_path)
+
+        click.echo('sync %s to %s' % (local_path, dbfs_path))
+
     def download_resource(self, resource, overwrite):
         resource_id, resource_type, physical_id, deploy_output = None, None, None, None
         try:
@@ -358,6 +354,8 @@ class StackApi(object):
             click.echo()
             if resource_type == WORKSPACE_TYPE:
                 self.download_workspace(resource_id, resource_properties, physical_id, overwrite)
+            if resource_type == DBFS_TYPE:
+                self.download_dbfs(resource_id, resource_properties, physical_id, overwrite)
         except HTTPError as e:
             click.echo("HTTP Error: \n %s" % (json.dumps(e.response)))
         except KeyError as e:
