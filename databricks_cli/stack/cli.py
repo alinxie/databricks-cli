@@ -28,7 +28,7 @@ from databricks_cli.version import print_version_callback, version
 from databricks_cli.configure.config import provide_api_client, profile_option, debug_option
 from databricks_cli.stack.api import StackApi
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 
 @click.command(context_settings=CONTEXT_SETTINGS,
