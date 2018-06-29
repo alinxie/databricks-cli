@@ -29,8 +29,7 @@ from requests.exceptions import HTTPError
 
 from databricks_cli.dbfs.exceptions import LocalFileExistsException
 from databricks_cli.sdk import WorkspaceService
-from databricks_cli.workspace.types import LanguageClickType, FormatClickType, WorkspaceFormat, \
-    WorkspaceLanguage
+from databricks_cli.workspace.types import WorkspaceFormat, WorkspaceLanguage
 
 DIRECTORY = 'DIRECTORY'
 NOTEBOOK = 'NOTEBOOK'
@@ -167,9 +166,6 @@ class WorkspaceApi(object):
                                 'continue.').format(cur_src, extensions))
 
     def export_workspace_dir(self, source_path, target_path, overwrite):
-        assert self.get_status(source_path).is_dir, 'The source path must be a directory. {}' \
-            .format(source_path)
-        
         if os.path.isfile(target_path):
             click.echo('{} exists as a file. Skipping this subtree {}'
                        .format(target_path, source_path))
