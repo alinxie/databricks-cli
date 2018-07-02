@@ -34,16 +34,7 @@ from databricks_cli.workspace.api import WorkspaceApi
 from databricks_cli.dbfs.api import DbfsApi
 from databricks_cli.workspace.types import WorkspaceLanguage
 from databricks_cli.version import version as CLI_VERSION
-<<<<<<< HEAD
 from databricks_cli.stack.exceptions import StackError
-=======
-from databricks_cli.dbfs.dbfs_path import DbfsPath
-from databricks_cli.workspace.types import LanguageClickType, FormatClickType, WorkspaceFormat, \
-    WorkspaceLanguage
-
-DEBUG_MODE = False
-_home = os.path.expanduser('~')
->>>>>>> Some changes, debug mode off
 
 MS_SEC = 1000
 

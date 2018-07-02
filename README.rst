@@ -58,7 +58,7 @@ the following commands:
 .. code::
 
     git clone https://github.com/alinxie/databricks-cli.git
-    cd databricks_cli
+    cd databricks-cli
     git checkout experimental
     pip install -e .
 
@@ -70,6 +70,8 @@ To get the latest features,
     git checkout experimental
     git pull
     pip install -e .
+
+If the
 
 Features
 ^^^^^^^^
