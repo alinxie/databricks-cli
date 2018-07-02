@@ -1,2 +1,2 @@
 // Databricks notebook source
-val environment = "dev"
+val environment = "prod"

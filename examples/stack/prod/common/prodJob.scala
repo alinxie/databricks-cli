@@ -1,2 +1,9 @@
 // Databricks notebook source
-print("Hello, scala")
+// MAGIC %run ../config/environment
+
+// COMMAND ----------
+
+print("Hello, scala " + environment)
+
+// COMMAND ----------
+

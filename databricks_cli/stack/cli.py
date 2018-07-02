@@ -1,5 +1,5 @@
 # Databricks CLI
-# Copyright 2017 Databricks, Inc.
+# Copyright 2018 Databricks, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"), except
 # that the use of services to which certain application programming
@@ -36,12 +36,14 @@ from databricks_cli.stack.api import StackApi
 from databricks_cli.workspace.types import LanguageClickType, FormatClickType, WorkspaceFormat, \
     WorkspaceLanguage
 
-DEBUG_MODE = False
+DEBUG_MODE = True
+
 
 @click.command(context_settings=CONTEXT_SETTINGS,
                short_help='Deploy stack given a JSON configuration of the stack')
 @click.argument('config_path', type=click.Path(exists=True), required=True)
-@click.option('--overwrite', '-o', is_flag=True, help='Include to overwrite existing notebooks in the workspace.')
+@click.option('--overwrite', '-o', is_flag=True, help='Include to overwrite existing notebooks in '
+                                                      'the workspace.')
 @click.option('--save-status', '-s', help='Path to save deploy status JSON file at.')
 @profile_option
 @eat_exceptions
