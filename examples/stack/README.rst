@@ -1,9 +1,8 @@
 Stack Configuration Template JSON Schema
 ========================================
 
-Example Config
---------------
-config.json:
+Example Config Template
+-----------------------
 
 .. code::
 

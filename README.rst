@@ -71,13 +71,14 @@ To get the latest features,
     git pull
     pip install -e .
 
-If the
+If you run `$databricks --version` the output should end with `dev0`. If this is not the case, you
+may need to start a new terminal session and relaunch any virtual environments you have created.
 
 Features
 ^^^^^^^^
     [X] Stack Deployment and Downloading of Jobs and Workspace Notebooks and Directories
 
-    [ ] Stack Deployment and Downloading of DBFS files/directories
+    [X] Stack Deployment and Downloading of DBFS files/directories
 
     [ ] Stack Describe functionality.
 
