@@ -100,6 +100,8 @@ class TestStackApi(object):
         assert stack_api.deployed_resource_config == TEST_STATUS[api.STACK_RESOURCES]
         assert all(resource[api.RESOURCE_ID] in stack_api.deployed_resources
                    for resource in TEST_STATUS[api.STACK_DEPLOYED])
+        assert get_deployed_resource()
+        wit
 
     def test_download_paths(self, stack_api, tmpdir):
         """
@@ -116,7 +118,7 @@ class TestStackApi(object):
         stack_api.workspace_client = mock.MagicMock()
         assert True
 
-    def test_deploy_resource_output(self, stack_api):
+    def test_deploy_paths(self, stack_api):
         stack_api.jobs_client = mock.MagicMock()
         stack_api.workspace_client = mock.MagicMock()
         assert True

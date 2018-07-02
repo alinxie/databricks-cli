@@ -24,7 +24,6 @@
 import os
 import json
 import traceback
-from base64 import b64encode, b64decode
 from datetime import datetime
 import time
 import six
@@ -39,8 +38,7 @@ from databricks_cli.workspace.api import WorkspaceApi
 from databricks_cli.dbfs.api import DbfsApi
 from databricks_cli.version import version as CLI_VERSION
 from databricks_cli.dbfs.dbfs_path import DbfsPath
-from databricks_cli.workspace.types import LanguageClickType, FormatClickType, WorkspaceFormat, \
-    WorkspaceLanguage
+from databricks_cli.workspace.types import WorkspaceFormat, WorkspaceLanguage
 
 DEBUG_MODE = True
 _home = os.path.expanduser('~')
@@ -264,7 +262,8 @@ class StackApi(object):
             click.echo(click.style(err_message, 'red'))
             success = False
         except KeyError as e:
-            err_message = 'Error in config template for resource %s: Missing %s, skipping resource' % (resource_id, e)
+            err_message = 'Error in config template for resource %s: Missing %s, skipping resource'\
+                          % (resource_id, e)
             click.echo(click.style(err_message, 'red'))
             success = False
         except Exception as e:
@@ -318,6 +317,10 @@ class StackApi(object):
         local_path = self.validate_source_path(resource_properties['source_path'])
         workspace_path = resource_properties['workspace_path']
 
+        if physical_id:
+            if physical_id['workspace_path'] != workspace_path:
+                click.echo("Change in workspace path from deployment")
+
         if 'format' in resource_properties:
             fmt = resource_properties['format']
         else:
@@ -343,12 +346,15 @@ class StackApi(object):
         local_path = self.validate_source_path(resource_properties['source_path'])
         dbfs_path = resource_properties['dbfs_path']
 
+        if physical_id:
+            if physical_id['dbfs_path'] != dbfs_path:
+                click.echo("Change in dbfs path from deployment")
+
         self.dbfs_client.cp(recursive=True, overwrite=overwrite, src=dbfs_path, dst=local_path)
 
         click.echo('sync %s to %s' % (local_path, dbfs_path))
 
     def download_resource(self, resource, overwrite):
-        resource_id, resource_type, physical_id, deploy_output = None, None, None, None
         try:
             resource_id = resource[RESOURCE_ID]
             resource_type = resource[RESOURCE_TYPE]
@@ -373,10 +379,11 @@ class StackApi(object):
     def download(self, filename, overwrite):
         local_dir = os.path.dirname(os.path.abspath(filename))
         cli_cwd = os.getcwd()
-        parsed_conf = self.parse_config_file(filename)
-        # load_credentials(parsed_conf, ctx.obj['HC_CONTEXT'])
+        parsed_conf = self.parse_config_file(local_dir)
+        os.chdir(local_dir)
         for resource in parsed_conf['resources']:
             self.download_resource(resource, overwrite)
+        os.chdir(cli_cwd)
 
 
     # WIP- describe stack
@@ -384,21 +391,3 @@ class StackApi(object):
         stored_deploy_metadata = self.load_deploy_metadata(stack_name)
         click.echo(json.dumps(stored_deploy_metadata, indent=2))
         return stored_deploy_metadata
-
-    def get_job_info(self, deployed_jobs):
-        jobs = []
-        for job in deployed_jobs:
-            try:
-                job_info = self.jobs_client.get_job(job['job_id'])
-                job_url = '%s/#job/%s' % (self.api_client.host, str(job_info['job_id']))
-                jobs.append({'job_name': job['job_name'], 'job_url': job_url, 'job_info': job_info})
-            except HTTPError as e:
-                jobs.append({'job_name': job['job_name'], 'job_url': "Job doesn't exist",
-                             'job_info': e.response.json()})
-        return jobs
-
-    def get_workspace_info(self, workspace_paths):
-        workspace_infos = []
-        for workspace_path in workspace_paths:
-            workspace_infos += self.workspace_client.list_objects(workspace_path)
-        return workspace_infos

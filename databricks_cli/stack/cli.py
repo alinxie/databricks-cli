@@ -21,20 +21,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import click
-import json
 import traceback
-from tabulate import tabulate
-from requests.exceptions import HTTPError
 
 from databricks_cli.utils import eat_exceptions, CONTEXT_SETTINGS
 from databricks_cli.version import print_version_callback, version
 from databricks_cli.configure.config import provide_api_client, profile_option
-from databricks_cli.dbfs.exceptions import LocalFileExistsException
 from databricks_cli.stack.api import StackApi
-from databricks_cli.workspace.types import LanguageClickType, FormatClickType, WorkspaceFormat, \
-    WorkspaceLanguage
 
 DEBUG_MODE = True
 
