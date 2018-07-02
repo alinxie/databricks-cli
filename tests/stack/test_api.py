@@ -21,7 +21,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-<<<<<<< HEAD
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-locals
 # pylint:disable=unused-argument
@@ -30,17 +29,10 @@ import os
 import json
 import mock
 from requests.exceptions import HTTPError
-=======
-import os
-import json
-import mock
-from base64 import b64encode
->>>>>>> Started adding tests and improve examples
 
 import pytest
 
 import databricks_cli.stack.api as api
-<<<<<<< HEAD
 from databricks_cli.stack.exceptions import StackError
 
 TEST_STACK_PATH = 'stack/stack.json'
@@ -126,38 +118,6 @@ class _TestJobsClient(object):
     def _list_jobs_by_name(self, job_name):
         return [job for job in self.jobs_in_databricks.values()
                 if job['job_settings']['name'] == job_name]
-=======
-from requests.exceptions import HTTPError
-
-TEST_STACK_PATH = 'stack/stack.json'
-TEST_JOB_RESOURCE = {
-    api.RESOURCE_ID: "client job test 1",
-    api.RESOURCE_TYPE: "job",
-    api.RESOURCE_PROPERTIES: {}
-}
-TEST_WORKSPACE_RESOURCE = {
-    api.RESOURCE_ID: "notebook 1",
-    api.RESOURCE_TYPE: "workspace",
-    api.RESOURCE_PROPERTIES: {
-        "source_path": "dev/job1.py",
-        "workspace_path": "/Users/example@example.com.com/dev/job",
-        "object_type": "NOTEBOOK"
-    }
-}
-TEST_DBFS_RESOURCE = {}
-TEST_STACK = {
-    api.STACK_NAME: "test-stack",
-    api.STACK_RESOURCES: [TEST_WORKSPACE_RESOURCE, TEST_JOB_RESOURCE, TEST_DBFS_RESOURCE]
-}
-TEST_STATUS = {
-    api.STACK_NAME: "test-stack",
-    api.STACK_RESOURCES: [TEST_WORKSPACE_RESOURCE, TEST_JOB_RESOURCE, TEST_DBFS_RESOURCE],
-    api.STACK_DEPLOYED: []
-}
-
-TEST_LANGUAGE = 'PYTHON'
-TEST_FMT = 'SOURCE'
->>>>>>> Started adding tests and improve examples
 
 
 @pytest.fixture()
@@ -168,31 +128,20 @@ def stack_api():
     workspace_api_mock.return_value = mock.MagicMock()
     jobs_api_mock.return_value = mock.MagicMock()
     dbfs_api_mock.return_value = mock.MagicMock()
-<<<<<<< HEAD
     stack_api = api.StackApi(mock.MagicMock())
-=======
-    stack_api = api.StackApi(None)
->>>>>>> Started adding tests and improve examples
     yield stack_api
 
 
 class TestStackApi(object):
-<<<<<<< HEAD
     def test_load_json_config(self, stack_api, tmpdir):
         """
             _load_json should read the same JSON content that was originally in the
             stack configuration JSON.
-=======
-    def test_read_config(self, stack_api, tmpdir):
-        """
-            Test reading a stack configuration template
->>>>>>> Started adding tests and improve examples
         """
         stack_path = os.path.join(tmpdir.strpath, TEST_STACK_PATH)
         os.makedirs(os.path.dirname(stack_path))
         with open(stack_path, "w+") as f:
             json.dump(TEST_STACK, f)
-<<<<<<< HEAD
         config = stack_api._load_json(stack_path)
         assert config == TEST_STACK
 
@@ -451,46 +400,3 @@ class TestStackApi(object):
             api.RESOURCE_PROPERTIES: {'test': 'test'}
         }
         stack_api._download_resource(resource_badservice)
-=======
-        config = stack_api.parse_config_file(stack_path)
-        assert config == TEST_STACK
-
-    def test_read_status(self, stack_api, tmpdir):
-        """
-            Test reading and parsing a deployed stack metadata
-        """
-        api.STACK_DIR = os.path.join(tmpdir.strpath, 'databricks', 'test')
-        os.makedirs(api.STACK_DIR)
-        status_path = os.path.join(api.STACK_DIR, 'test.json')
-        with open(status_path, "w+") as f:
-            json.dump(TEST_STATUS, f)
-
-        status = stack_api.load_deploy_metadata('test')
-        assert status == TEST_STATUS
-        assert stack_api.deployed_resource_config == TEST_STATUS[api.STACK_RESOURCES]
-        assert all(resource[api.RESOURCE_ID] in stack_api.deployed_resources
-                   for resource in TEST_STATUS[api.STACK_DEPLOYED])
-
-    def test_download_paths(self, stack_api, tmpdir):
-        """
-            Copy to directory ``tmpdir`` with structure as follows
-            - a (directory)
-              - b (scala)
-              - c (python)
-              - d (r)
-              - e (sql)
-            - f (directory)
-              - g (directory)
-        """
-        stack_api.jobs_client = mock.MagicMock()
-        stack_api.workspace_client = mock.MagicMock()
-        assert True
-
-    def test_deploy_resource_output(self, stack_api):
-        stack_api.jobs_client = mock.MagicMock()
-        stack_api.workspace_client = mock.MagicMock()
-        assert True
-
-    def test_duplicate_id(self, stack_api):
-        assert True
->>>>>>> Started adding tests and improve examples
