@@ -381,7 +381,7 @@ class StackApi(object):
         cli_cwd = os.getcwd()
         parsed_conf = self.parse_config_file(local_dir)
         os.chdir(local_dir)
-        for resource in parsed_conf['resources']:
+        for resource in parsed_conf[STACK_RESOURCES]:
             self.download_resource(resource, overwrite)
         os.chdir(cli_cwd)
 

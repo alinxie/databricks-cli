@@ -37,8 +37,9 @@ TEST_JOB_RESOURCE = {
     api.RESOURCE_TYPE: "job",
     api.RESOURCE_PROPERTIES: {}
 }
+TEST_WORKSPACE_RESOURCE_ID = "notebook 1"
 TEST_WORKSPACE_RESOURCE = {
-    api.RESOURCE_ID: "notebook 1",
+    api.RESOURCE_ID: TEST_WORKSPACE_RESOURCE_ID,
     api.RESOURCE_TYPE: "workspace",
     api.RESOURCE_PROPERTIES: {
         "source_path": "dev/job1.py",
@@ -100,19 +101,19 @@ class TestStackApi(object):
         assert stack_api.deployed_resource_config == TEST_STATUS[api.STACK_RESOURCES]
         assert all(resource[api.RESOURCE_ID] in stack_api.deployed_resources
                    for resource in TEST_STATUS[api.STACK_DEPLOYED])
-        assert get_deployed_resource()
-        wit
+        assert get_deployed_resource(TEST_WORKSPACE_RESOURCE_ID)
+
+    def test_store_status(self, stack_api, tmpdir):
+        assert True
 
     def test_download_paths(self, stack_api, tmpdir):
         """
-            Copy to directory ``tmpdir`` with structure as follows
-            - a (directory)
-              - b (scala)
-              - c (python)
-              - d (r)
-              - e (sql)
-            - f (directory)
-              - g (directory)
+            Test downloading of files to relative paths of the config template json file.
+            - stack (directory)
+              - stack.json (config file)
+              - dev (directory)
+                - a (workspace notebook)
+                - b (dbfs init script)
         """
         stack_api.jobs_client = mock.MagicMock()
         stack_api.workspace_client = mock.MagicMock()
@@ -121,6 +122,15 @@ class TestStackApi(object):
     def test_deploy_paths(self, stack_api):
         stack_api.jobs_client = mock.MagicMock()
         stack_api.workspace_client = mock.MagicMock()
+        assert True
+
+    def test_deploy_job(self, stack_api):
+        assert True
+
+    def test_deploy_workspace(self, stack_api):
+        assert True
+
+    def test_deploy_dbfs(self, stack_api):
         assert True
 
     def test_duplicate_id(self, stack_api):
