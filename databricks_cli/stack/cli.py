@@ -91,22 +91,6 @@ def describe(api_client, stack_name):
     """
 
     StackApi(api_client).describe(stack_name)
-    # click.echo("STACK NAME: %s" % stack_description['name'])
-    # click.echo("STACK VERSION: %s" % stack_description['version'])
-    # click.echo("CLI VERSION: %s" % stack_description['cli_version'])
-    # click.echo()
-    # click.echo("WORKSPACE:")
-    # workspace_table = tabulate(
-    #     [obj.to_row(is_long_form=True, is_absolute=True) for obj in stack_description['workspace']],
-    #     tablefmt='plain')
-    # click.echo(workspace_table)
-    # click.echo()
-    # click.echo("JOBS:")
-    # for job in stack_description['jobs']:
-    #     click.echo("Job Name: %s" % job['job_name'])
-    #     click.echo(click.style(job['job_url'], fg='green'))
-    #     click.echo(json.dumps(job['job_info'], indent=2))
-    #     click.echo()
 
 
 @click.group(context_settings=CONTEXT_SETTINGS,
@@ -123,4 +107,4 @@ def stack_group():
 
 stack_group.add_command(deploy, name='deploy')
 stack_group.add_command(download, name='download')
-# stack_group.add_command(describe, name='describe')
+stack_group.add_command(describe, name='describe')

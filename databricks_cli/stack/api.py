@@ -145,11 +145,10 @@ class StackApi(object):
     def deploy_job(self, resource_id, job_settings, physical_id=None):
         job_id = None
         print("Deploying job %s with settings: \n%s \n" % (resource_id, json.dumps(
-            job_settings, indent=2, sort_keys=True, separators=(',', ': '))))
+            job_settings, indent=2, separators=(',', ': '))))
 
         if physical_id:  # job exists
-            if 'job_id' in physical_id:
-                job_id = physical_id['job_id']
+            job_id = physical_id
 
         if job_id:
             try:
@@ -168,14 +167,13 @@ class StackApi(object):
             click.echo("%s Created with ID %s. Link: %s/#job/%s" % (
                 resource_id, str(job_id), self.api_client.host, str(job_id)))
 
-        physical_id = {'job_id': job_id}
         deploy_output = self.jobs_client.get_job(job_id)
 
-        return physical_id, deploy_output
+        return job_id, deploy_output
 
-    def deploy_workspace(self, resource_id, resource_properties, physical_id=None, overwrite=False):
+    def deploy_workspace(self, resource_id, resource_properties, physical_path=None, overwrite=False):
         click.echo("Deploying workspace asset %s with properties \n%s" % (resource_id, json.dumps(
-            resource_properties, indent=2, sort_keys=True, separators=(',', ': '))))
+            resource_properties, indent=2, separators=(',', ': '))))
         local_path = self.validate_source_path(resource_properties['source_path'])
         workspace_path = resource_properties['workspace_path']
 
@@ -202,32 +200,31 @@ class StackApi(object):
         elif object_type == 'DIRECTORY':
             self.workspace_client.import_workspace_dir(local_path, workspace_path, overwrite,
                                                        exclude_hidden_files=True)
-        if physical_id and workspace_path != physical_id['path']:
+        if physical_path and workspace_path != physical_path:
             click.echo('Workspace asset %s had path changed from %s to %s' % (resource_id,
-                                                                              physical_id['path'],
+                                                                              physical_path,
                                                                               workspace_path))
-        physical_id = {'path': workspace_path}
         deploy_output = self.workspace_client.get_status_json(workspace_path)
 
-        return physical_id, deploy_output
+        return workspace_path, deploy_output
 
-    def deploy_dbfs(self, resource_id, resource_properties, physical_id=None, overwrite=False):
+    def deploy_dbfs(self, resource_id, resource_properties, physical_path=None, overwrite=False):
         click.echo("Deploying dbfs asset %s with properties \n%s" % (resource_id, json.dumps(
-            resource_properties, indent=2, sort_keys=True, separators=(',', ': '))))
+            resource_properties, indent=2, separators=(',', ': '))))
 
         local_path = self.validate_source_path(resource_properties['source_path'])
         dbfs_path = resource_properties['dbfs_path']
 
         self.dbfs_client.cp(recursive=True, overwrite=overwrite, src=local_path, dst=dbfs_path)
 
-        if physical_id and dbfs_path != physical_id['path']:
+        if physical_path and dbfs_path != physical_path:
             click.echo('Workspace asset %s had path changed from %s to %s' % (resource_id,
-                                                                              physical_id['path'],
+                                                                              physical_path,
                                                                               dbfs_path))
-        physical_id = {'path': dbfs_path}
+
         deploy_output = self.dbfs_client.get_status_json(DbfsPath(dbfs_path))
 
-        return physical_id, deploy_output
+        return dbfs_path, deploy_output
 
     def deploy_resource(self, resource, overwrite):
         resource_id, resource_type, physical_id, deploy_output = None, None, None, None
@@ -242,27 +239,37 @@ class StackApi(object):
             physical_id = self.get_deployed_resource(resource_id, resource_type)
 
             if resource_type == JOBS_TYPE:
-                physical_id, deploy_output = self.deploy_job(resource_id, resource_properties,
-                                                             physical_id)
+                job_id = physical_id['job_id'] if physical_id and 'job_id' in physical_id else None
+                job_id, deploy_output = self.deploy_job(resource_id, resource_properties,
+                                                        job_id)
+                physical_id = {'job_id': job_id}
+
             elif resource_type == WORKSPACE_TYPE:
-                physical_id, deploy_output = self.deploy_workspace(resource_id,
-                                                                   resource_properties,
-                                                                   physical_id, overwrite)
+                physical_path = physical_id['path'] \
+                    if physical_id and 'path' in physical_id else None
+                physical_path, deploy_output = self.deploy_workspace(resource_id,
+                                                                     resource_properties,
+                                                                     physical_path, overwrite)
+                physical_id = {'path': physical_path}
             elif resource_type == DBFS_TYPE:
-                physical_id, deploy_output = self.deploy_dbfs(resource_id,
-                                                              resource_properties,
-                                                              physical_id, overwrite)
+                physical_path = physical_id['path'] \
+                    if physical_id and 'path' in physical_id else None
+                physical_path, deploy_output = self.deploy_dbfs(resource_id,
+                                                                resource_properties,
+                                                                physical_path, overwrite)
+                physical_id = {'path': physical_path}
+
             else:
                 click.echo("Resource type not found")
                 return None
         except HTTPError as e:
-            if DEBUG_MODE:
-                traceback.print_tb(e.__traceback__)
+            # if DEBUG_MODE:
+            #     traceback.print_tb(e.__traceback__)
             err_message = 'HTTP Error: %s' % e.response.json()
             click.echo(click.style(err_message, 'red'))
             success = False
         except KeyError as e:
-            err_message = 'Error in config template for resource %s: Missing %s, skipping resource'\
+            err_message = 'Error in config template for resource %s: Missing %s, skipping resource' \
                           % (resource_id, e)
             click.echo(click.style(err_message, 'red'))
             success = False
@@ -286,10 +293,10 @@ class StackApi(object):
 
     def deploy(self, filename, overwrite, save_status_path=None):
         local_dir = os.path.dirname(os.path.abspath(filename))
-        cli_cwd = os.getcwd()
+        curr_cwd = os.getcwd()
         if save_status_path:
             save_status_path = os.path.abspath(save_status_path)
-        os.chdir(local_dir)
+        os.chdir(local_dir)  # Switch current working directory to where json is stored
 
         parsed_conf = self.parse_config_file(filename)
         stack_name = parsed_conf['name']
@@ -309,11 +316,11 @@ class StackApi(object):
                 deployed_resources.append(deploy_status)
         deploy_metadata['deployed'] = deployed_resources
         self.store_deploy_metadata(stack_name, deploy_metadata, save_status_path)
-        os.chdir(cli_cwd)
+        os.chdir(curr_cwd)
 
     def download_workspace(self, resource_id, resource_properties, physical_id, overwrite):
         click.echo("Downloading workspace asset %s with properties \n%s" % (resource_id, json.dumps(
-            resource_properties, indent=2, sort_keys=True, separators=(',', ': '))))
+            resource_properties, indent=2, separators=(',', ': '))))
         local_path = self.validate_source_path(resource_properties['source_path'])
         workspace_path = resource_properties['workspace_path']
 
@@ -342,7 +349,7 @@ class StackApi(object):
 
     def download_dbfs(self, resource_id, resource_properties, physical_id=None, overwrite=False):
         click.echo("Downloading dbfs asset %s with properties \n%s" % (resource_id, json.dumps(
-            resource_properties, indent=2, sort_keys=True, separators=(',', ': '))))
+            resource_properties, indent=2, separators=(',', ': '))))
         local_path = self.validate_source_path(resource_properties['source_path'])
         dbfs_path = resource_properties['dbfs_path']
 
@@ -384,7 +391,6 @@ class StackApi(object):
         for resource in parsed_conf[STACK_RESOURCES]:
             self.download_resource(resource, overwrite)
         os.chdir(cli_cwd)
-
 
     # WIP- describe stack
     def describe(self, stack_name):
