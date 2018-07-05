@@ -264,8 +264,6 @@ class StackApi(object):
                 click.echo("Resource type not found")
                 return None
         except HTTPError as e:
-            # if DEBUG_MODE:
-            #     traceback.print_tb(e.__traceback__)
             if e.response.status_code == 401:
                 six.reraise(*sys.exc_info())
             try:

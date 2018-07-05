@@ -72,7 +72,8 @@ To get the latest features,
     pip install -e .
 
 If you run `$databricks --version` the output should end with `dev0`. If this is not the case, you
-may need to start a new terminal session and relaunch any virtual environments you have created.
+may need to start a new terminal session and relaunch any virtual environments you have created. When
+installing the virtualenv, it may help to use the ``--no-site-packages`` flag.
 
 Features
 ^^^^^^^^
