@@ -43,9 +43,10 @@ from databricks_cli.workspace.types import WorkspaceFormat, WorkspaceLanguage
 
 DEBUG_MODE = True
 _home = os.path.expanduser('~')
+MS_SEC = 1000
 
-# Stack Deployment Status Folder
-STACK_DIR = os.path.join(_home, 'databricks', 'stacks', 'beta')
+# Stack Deployment Status Folder- WIP
+# STACK_DIR = os.path.join(_home, 'databricks', 'stacks', 'beta')
 
 # Resource Types
 WORKSPACE_TYPE = 'workspace'
@@ -85,22 +86,36 @@ class StackApi(object):
 
         return parsed_conf
 
-    def load_deploy_metadata(self, stack_name, stack_path=None):
-        stack_file_path = os.path.join(STACK_DIR, stack_name + '.json')
-        parsed_conf = {}
-        if os.path.exists(stack_file_path):
-            with open(stack_file_path, 'r') as f:
-                parsed_conf = json.load(f)
+    def generate_stack_status_path(self, stack_path):
+        return '.'.join(stack_path.split('.').insert(-1, 'deployed'))
 
-        if not parsed_conf and stack_path:
-            with open(stack_path, 'r') as f:
-                parsed_conf = json.load(f)
+    def load_deploy_metadata(self, stack_path, save_path=None):
+        parsed_conf = {}
+
+        if save_path:
+            if os.path.exists(save_path):
+                try:
+                    with open(save_path, 'r') as f:
+                        parsed_conf = json.load(f)
+                    click.echo("Using deployment status file at %s" % stack_path)
+                except ValueError:
+                    pass
+        else:
+            new_save_path = self.generate_stack_status_path(stack_path)
+            if os.path.exists(new_save_path):
+                try:
+                    with open(new_save_path, 'r') as f:
+                        parsed_conf = json.load(f)
+                    click.echo("Using deployment status file at %s" % new_save_path)
+                except ValueError:
+                    pass
 
         if STACK_RESOURCES in parsed_conf:
             self.deployed_resource_config = parsed_conf[STACK_RESOURCES]
         if STACK_DEPLOYED in parsed_conf:
             self.deployed_resources = {resource[RESOURCE_ID]: resource for resource in
                                        parsed_conf[STACK_DEPLOYED]}
+
         return parsed_conf
 
     def get_deployed_resource(self, resource_id, resource_type):
@@ -123,13 +138,13 @@ class StackApi(object):
             return deployed_physical_id
         return None
 
-    def store_deploy_metadata(self, stack_name, data, custom_path=None):
-        stack_file_path = os.path.join(STACK_DIR, stack_name + ".json")
-        stack_file_folder = os.path.dirname(stack_file_path)
+    def store_deploy_metadata(self, stack_path, data, custom_path=None):
+        stack_status_filepath = self.generate_stack_status_path(stack_path)
+        stack_file_folder = os.path.dirname(stack_status_filepath)
         if not os.path.exists(stack_file_folder):
             os.makedirs(stack_file_folder)
-        with open(stack_file_path, 'w+') as f:
-            click.echo('Storing deploy status metadata to %s' % stack_file_path)
+        with open(stack_status_filepath, 'w+') as f:
+            click.echo('Storing deploy status metadata to %s' % stack_status_filepath)
             json.dump(data, f, indent=2)
 
         if custom_path:
@@ -150,6 +165,15 @@ class StackApi(object):
 
         if physical_id:  # job exists
             job_id = physical_id
+        elif 'name' in job_settings:
+            jobs_same_name = self.jobs_client.get_jobs_by_name(job_settings['name'])
+            if jobs_same_name:
+                creator_name = jobs_same_name[0]['creator_user_name']
+                timestamp = jobs_same_name[0]['created_time'] / MS_SEC
+                date_created = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H-%M-%S')
+                click.echo('Warning: Job exists with same name created by %s on %s. Job will '
+                           'be overwritten' % (creator_name, date_created))
+                job_id = jobs_same_name[0]['job_id']
 
         if job_id:
             try:
@@ -172,7 +196,8 @@ class StackApi(object):
 
         return job_id, deploy_output
 
-    def deploy_workspace(self, resource_id, resource_properties, physical_path=None, overwrite=False):
+    def deploy_workspace(self, resource_id, resource_properties, physical_path=None,
+                         overwrite=False):
         click.echo("Deploying workspace asset %s with properties \n%s" % (resource_id, json.dumps(
             resource_properties, indent=2, separators=(',', ': '))))
         local_path = self.validate_source_path(resource_properties['source_path'])
@@ -266,14 +291,15 @@ class StackApi(object):
         except HTTPError as e:
             if e.response.status_code == 401:
                 six.reraise(*sys.exc_info())
+            resp = e.response
             try:
                 resp = e.response.json()
             except ValueError:  # NO json exists.
                 six.reraise(*sys.exc_info())
-            if not ('error_code' in resp and 'message' in resp):
-                err_message = 'Server Error: %s' % str(resp)
-            else:
+            if 'error_code' in resp and 'message' in resp:
                 err_message = 'Server Error: %s: %s' % (resp['error_code'], resp['message'])
+            else:
+                err_message = 'Server Error: %s' % str(resp)
             click.echo(click.style(err_message, 'red'))
             success = False
         except KeyError as e:
@@ -300,7 +326,8 @@ class StackApi(object):
         return resource_deploy_info
 
     def deploy(self, filename, overwrite, save_status_path=None):
-        local_dir = os.path.dirname(os.path.abspath(filename))
+        config_filepath = os.path.abspath(filename)
+        local_dir = os.path.dirname(config_filepath)
         curr_cwd = os.getcwd()
         if save_status_path:
             save_status_path = os.path.abspath(save_status_path)
@@ -309,7 +336,7 @@ class StackApi(object):
         parsed_conf = self.parse_config_file(filename)
         stack_name = parsed_conf['name']
 
-        self.load_deploy_metadata(stack_name, save_status_path)
+        self.load_deploy_metadata(config_filepath, save_status_path)
 
         deploy_metadata = {'name': stack_name, 'cli_version': CLI_VERSION}
         # deploy_metadata['version'] = parsed_conf['version']
@@ -323,7 +350,7 @@ class StackApi(object):
             if deploy_status:
                 deployed_resources.append(deploy_status)
         deploy_metadata['deployed'] = deployed_resources
-        self.store_deploy_metadata(stack_name, deploy_metadata, save_status_path)
+        self.store_deploy_metadata(config_filepath, deploy_metadata, save_status_path)
         os.chdir(curr_cwd)
 
     def download_workspace(self, resource_id, resource_properties, physical_id, overwrite):
@@ -383,25 +410,29 @@ class StackApi(object):
             elif resource_type == DBFS_TYPE:
                 self.download_dbfs(resource_id, resource_properties, physical_id, overwrite)
         except HTTPError as e:
-            click.echo("HTTP Error: \n %s" % (json.dumps(e.response)))
+            if e.response.status_code == 401:
+                six.reraise(*sys.exc_info())
+            resp = e.response
+            try:
+                resp = e.response.json()
+            except ValueError:  # NO json exists.
+                six.reraise(*sys.exc_info())
+            if 'error_code' in resp and 'message' in resp:
+                click.echo('Server Error: %s: %s' % (resp['error_code'], resp['message']))
+            else:
+                click.echo('Server Error: %s' % str(resp))
         except KeyError as e:
             click.echo('Error in config template: Missing %s, skipping resource' % e)
         except Exception as e:
             if DEBUG_MODE:
-                traceback.print_tb(e.__traceback__)
+                traceback.print_exc()
             click.echo(str(e))
 
     def download(self, filename, overwrite):
-        local_dir = os.path.dirname(os.path.abspath(filename))
+        config_dir = os.path.dirname(os.path.abspath(filename))
         cli_cwd = os.getcwd()
-        parsed_conf = self.parse_config_file(local_dir)
-        os.chdir(local_dir)
+        parsed_conf = self.parse_config_file(config_dir)
+        os.chdir(config_dir)
         for resource in parsed_conf[STACK_RESOURCES]:
             self.download_resource(resource, overwrite)
         os.chdir(cli_cwd)
-
-    # WIP- describe stack
-    def describe(self, stack_name):
-        stored_deploy_metadata = self.load_deploy_metadata(stack_name)
-        click.echo(json.dumps(stored_deploy_metadata, indent=2))
-        return stored_deploy_metadata

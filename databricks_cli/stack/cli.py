@@ -37,7 +37,8 @@ DEBUG_MODE = True
 @click.argument('config_path', type=click.Path(exists=True), required=True)
 @click.option('--overwrite', '-o', is_flag=True, help='Include to overwrite existing notebooks in '
                                                       'the workspace.')
-@click.option('--save-status', '-s', help='Path to save deploy status JSON file at.')
+@click.option('--save-status', '-s', help='Path of deploy status JSON file at. Also a custom path '
+              'to save the deploy status JSON file at.')
 @profile_option
 @eat_exceptions
 @provide_api_client
@@ -68,20 +69,6 @@ def download(api_client, config_path, overwrite):
     print('#' * 80 + '\n')
 
 
-# WIP- Describe Stack
-@click.command(context_settings=CONTEXT_SETTINGS,
-               short_help='Describe a deployed stack of resources')
-@click.option('--stack-name', '-s', required=True, help='Stack Name.')
-@profile_option
-@eat_exceptions
-@provide_api_client
-def describe(api_client, stack_name):
-    """
-    Describe a deployed stack of resources.
-    """
-
-    StackApi(api_client).describe(stack_name)
-
 
 @click.group(context_settings=CONTEXT_SETTINGS,
              short_help='Utility to deploy and download Databricks resource stacks.')
@@ -97,4 +84,3 @@ def stack_group():
 
 stack_group.add_command(deploy, name='deploy')
 stack_group.add_command(download, name='download')
-stack_group.add_command(describe, name='describe')

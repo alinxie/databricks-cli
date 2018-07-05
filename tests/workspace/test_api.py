@@ -29,7 +29,10 @@ import pytest
 import databricks_cli.workspace.api as api
 from databricks_cli.workspace.api import WorkspaceFileInfo
 from databricks_cli.workspace.types import WorkspaceLanguage
+<<<<<<< HEAD
 from requests.exceptions import HTTPError
+=======
+>>>>>>> databricks/master
 
 TEST_WORKSPACE_PATH = '/test/workspace/path'
 TEST_JSON_RESPONSE = {
@@ -104,8 +107,7 @@ class TestWorkspaceApi(object):
         test_file_path = os.path.join(tmpdir.strpath, 'test')
         with open(test_file_path, 'w') as f:
             f.write('test')
-        workspace_api.get_status = mock.MagicMock()
-        workspace_api.get_status.side_effect = HTTPError() # Assume file doesn't exist.
+
         workspace_api.import_workspace(test_file_path, TEST_WORKSPACE_PATH, TEST_LANGUAGE, TEST_FMT,
                                        is_overwrite=False)
         import_workspace_mock = workspace_api.client.import_workspace
