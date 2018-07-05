@@ -64,6 +64,7 @@ class StackApi(object):
         self.jobs_client = JobsApi(api_client)
         self.workspace_client = WorkspaceApi(api_client)
         self.dbfs_client = DbfsApi(api_client)
+<<<<<<< HEAD
 
     def deploy(self, config_path, **kwargs):
         """
@@ -305,6 +306,123 @@ class StackApi(object):
         :param resource_properties: A dict of the Databricks JobSettings data structure
         :param physical_id: A dict object containing 'job_id' field of job identifier in Databricks
         server
+=======
+        profile = get_profile_from_context()
+        config = get_config_for_profile(profile)
+        self.host = config.host
+        self.deployed_resources = {}
+        self.deployed_resource_config = {}
+
+    def parse_config_file(self, filename):
+        """Parse the json config"""
+        parsed_conf = {}
+        with open(filename, 'r') as f:
+            parsed_conf = json.load(f)
+
+        return parsed_conf
+
+    def generate_stack_status_path(self, stack_path):
+        stack_path_split = stack_path.split('.')
+        stack_path_split.insert(-1, 'deployed')
+        return '.'.join(stack_path_split)
+
+    def load_deploy_metadata(self, stack_path, save_path=None):
+        parsed_conf = {}
+        default_status_path = self.generate_stack_status_path(stack_path)
+        try:
+            if save_path and os.path.exists(save_path):
+                with open(save_path, 'r') as f:
+                    parsed_conf = json.load(f)
+                click.echo("Using deployment status file at %s" % stack_path)
+            elif os.path.exists(default_status_path):
+                with open(default_status_path, 'r') as f:
+                    parsed_conf = json.load(f)
+                click.echo("Using deployment status file at %s" % default_status_path)
+        except ValueError:
+            pass
+
+        if STACK_RESOURCES in parsed_conf:
+            self.deployed_resource_config = parsed_conf[STACK_RESOURCES]
+        if STACK_DEPLOYED in parsed_conf:
+            self.deployed_resources = {resource[RESOURCE_ID]: resource for resource in
+                                       parsed_conf[STACK_DEPLOYED]}
+
+        return parsed_conf
+
+    def get_deployed_resource(self, resource_id, resource_type):
+        """
+        Returns the databricks physical ID of a resource with RESOURCE_ID and RESOURCE_TYPE
+
+        :param resource_id: Internal stack identifier of resource
+        :param resource_type: Resource type of stack resource
+        :return: JSON object of Physical ID of resource on databricks
+        """
+        if not self.deployed_resources:
+            return None
+        if resource_id in self.deployed_resources:
+            deployed_resource = self.deployed_resources[resource_id]
+            deployed_resource_type = deployed_resource[RESOURCE_TYPE]
+            deployed_physical_id = deployed_resource[RESOURCE_PHYSICAL_ID]
+            if resource_type != deployed_resource_type:
+                click.echo("Resource %s is not of type %s", (resource_id, resource_type))
+                return None
+            return deployed_physical_id
+        return None
+
+    def store_deploy_metadata(self, stack_path, data, custom_path=None):
+        stack_status_filepath = self.generate_stack_status_path(stack_path)
+        stack_file_folder = os.path.dirname(stack_status_filepath)
+        if not os.path.exists(stack_file_folder):
+            os.makedirs(stack_file_folder)
+        with open(stack_status_filepath, 'w+') as f:
+            click.echo('Storing deploy status metadata to %s' % stack_status_filepath)
+            json.dump(data, f, indent=2)
+
+        if custom_path:
+            custom_path_folder = os.path.dirname(custom_path)
+            if not os.path.exists(custom_path_folder):
+                os.makedirs(custom_path_folder)
+            with open(custom_path, 'w+') as f:
+                click.echo('Storing deploy status metadata to %s' % os.path.abspath(custom_path))
+                json.dump(data, f, indent=2)
+
+    def validate_source_path(self, source_path):
+        return os.path.abspath(source_path)
+
+    def deploy_job(self, resource_id, job_settings, physical_id=None):
+        job_id = None
+        print("Deploying job %s with settings: \n%s \n" % (resource_id, json.dumps(
+            job_settings, indent=2, separators=(',', ': '))))
+
+        if physical_id:  # job exists
+            job_id = physical_id
+        elif 'name' in job_settings:
+            jobs_same_name = self.jobs_client.get_jobs_by_name(job_settings['name'])
+            if jobs_same_name:
+                creator_name = jobs_same_name[0]['creator_user_name']
+                timestamp = jobs_same_name[0]['created_time'] / MS_SEC
+                date_created = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H-%M-%S')
+                click.echo('Warning: Job exists with same name created by %s on %s. Job will '
+                           'be overwritten' % (creator_name, date_created))
+                job_id = jobs_same_name[0]['job_id']
+
+        if job_id:
+            try:
+                # Check if persisted job still exists, otherwise create new job.
+                self.jobs_client.get_job(job_id)
+            except HTTPError:
+                job_id = None
+
+        if job_id:
+            click.echo("Updating Job: %s" % resource_id)
+            self.jobs_client.reset_job({'job_id': job_id, 'new_settings': job_settings})
+            click.echo("Link: %s#job/%s" % (self.host, str(job_id)))
+        else:
+            click.echo("Creating Job: %s" % resource_id)
+            job_id = self.jobs_client.create_job(job_settings)['job_id']
+            click.echo("%s Created with ID %s. Link: %s#job/%s" % (
+                resource_id, str(job_id), self.host, str(job_id)))
+>>>>>>> Changes to where stack status is stored- in same dir as config file or custom path
 
         :return: tuple of (physical_id, deploy_output), where physical_id contains a 'job_id' field
         of the physical job_id of the job on databricks. deploy_output is the output of the job
