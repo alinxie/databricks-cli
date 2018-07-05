@@ -169,7 +169,7 @@ class JobsService(object):
         if limit is not None:
             _data['limit'] = limit
         return self.client.perform_query('GET', '/jobs/runs/list', data=_data)
-        
+
     def get_run(self, run_id=None):
         _data = {}
         if run_id is not None:
