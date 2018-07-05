@@ -21,6 +21,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 import os
 import json
 import traceback
@@ -159,8 +160,8 @@ class StackApi(object):
 
         if job_id:
             click.echo("Updating Job: %s" % resource_id)
-            click.echo("Link: %s/#job/%s" % (self.api_client.host, str(job_id)))
             self.jobs_client.reset_job({'job_id': job_id, 'new_settings': job_settings})
+            click.echo("Link: %s/#job/%s" % (self.api_client.host, str(job_id)))
         else:
             click.echo("Creating Job: %s" % resource_id)
             job_id = self.jobs_client.create_job(job_settings)['job_id']
@@ -265,7 +266,16 @@ class StackApi(object):
         except HTTPError as e:
             # if DEBUG_MODE:
             #     traceback.print_tb(e.__traceback__)
-            err_message = 'HTTP Error: %s' % e.response.json()
+            if e.response.status_code == 401:
+                six.reraise(*sys.exc_info())
+            try:
+                resp = e.response.json()
+            except ValueError:  # NO json exists.
+                six.reraise(*sys.exc_info())
+            if not ('error_code' in resp and 'message' in resp):
+                err_message = 'Server Error: %s' % str(resp)
+            else:
+                err_message = 'Server Error: %s: %s' % (resp['error_code'], resp['message'])
             click.echo(click.style(err_message, 'red'))
             success = False
         except KeyError as e:
@@ -275,7 +285,7 @@ class StackApi(object):
             success = False
         except Exception as e:
             if DEBUG_MODE:
-                traceback.print_tb(e.__traceback__)
+                traceback.print_exc()
             err_message = str(e)
             click.echo(click.style(err_message, 'red'))
             success = False

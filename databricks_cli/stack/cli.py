@@ -47,12 +47,7 @@ def deploy(api_client, config_path, overwrite, save_status):
     """
 
     print('Deploying stack at: ' + config_path)
-    try:
-        StackApi(api_client).deploy(config_path, overwrite, save_status)
-    except Exception as e:
-        if DEBUG_MODE:
-            traceback.print_tb(e.__traceback__)
-        click.echo(e)
+    StackApi(api_client).deploy(config_path, overwrite, save_status)
     print('#' * 80 + '\n')
 
 
@@ -69,12 +64,7 @@ def download(api_client, config_path, overwrite):
     Downloads the notebooks defined in the stack.
     """
     print('Downloading stack at: ' + config_path)
-    try:
-        StackApi(api_client).download(config_path, overwrite)
-    except Exception as e:
-        if DEBUG_MODE:
-            traceback.print_tb(e.__traceback__)
-        click.echo(e)
+    StackApi(api_client).download(config_path, overwrite)
     print('#' * 80 + '\n')
 
 

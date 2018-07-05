@@ -31,7 +31,7 @@ from requests.exceptions import HTTPError
 from databricks_cli.configure.provider import DEFAULT_SECTION
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-DEBUG_MODE = False # Remember to set this as False...
+DEBUG_MODE = True
 
 
 def eat_exceptions(function):
@@ -48,6 +48,8 @@ def eat_exceptions(function):
         except Exception as exception: # noqa
             if not DEBUG_MODE:
                 error_and_quit('{}: {}'.format(type(exception).__name__, str(exception)))
+            else:
+                six.reraise(*sys.exc_info())
     decorator.__doc__ = function.__doc__
     return decorator
 
