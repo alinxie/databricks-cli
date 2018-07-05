@@ -40,8 +40,9 @@ from databricks_cli.dbfs.api import DbfsApi
 from databricks_cli.version import version as CLI_VERSION
 from databricks_cli.dbfs.dbfs_path import DbfsPath
 from databricks_cli.workspace.types import WorkspaceFormat, WorkspaceLanguage
+from databricks_cli.configure.config import get_profile_from_context, get_config_for_profile
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 _home = os.path.expanduser('~')
 MS_SEC = 1000
 
@@ -74,7 +75,9 @@ class StackApi(object):
         self.jobs_client = JobsApi(api_client)
         self.workspace_client = WorkspaceApi(api_client)
         self.dbfs_client = DbfsApi(api_client)
-        self.api_client = api_client
+        profile = get_profile_from_context()
+        config = get_config_for_profile(profile)
+        self.host = config.host
         self.deployed_resources = {}
         self.deployed_resource_config = {}
 
@@ -87,28 +90,24 @@ class StackApi(object):
         return parsed_conf
 
     def generate_stack_status_path(self, stack_path):
-        return '.'.join(stack_path.split('.').insert(-1, 'deployed'))
+        stack_path_split = stack_path.split('.')
+        stack_path_split.insert(-1, 'deployed')
+        return '.'.join(stack_path_split)
 
     def load_deploy_metadata(self, stack_path, save_path=None):
         parsed_conf = {}
-
-        if save_path:
-            if os.path.exists(save_path):
-                try:
-                    with open(save_path, 'r') as f:
-                        parsed_conf = json.load(f)
-                    click.echo("Using deployment status file at %s" % stack_path)
-                except ValueError:
-                    pass
-        else:
-            new_save_path = self.generate_stack_status_path(stack_path)
-            if os.path.exists(new_save_path):
-                try:
-                    with open(new_save_path, 'r') as f:
-                        parsed_conf = json.load(f)
-                    click.echo("Using deployment status file at %s" % new_save_path)
-                except ValueError:
-                    pass
+        default_status_path = self.generate_stack_status_path(stack_path)
+        try:
+            if save_path and os.path.exists(save_path):
+                with open(save_path, 'r') as f:
+                    parsed_conf = json.load(f)
+                click.echo("Using deployment status file at %s" % stack_path)
+            elif os.path.exists(default_status_path):
+                with open(default_status_path, 'r') as f:
+                    parsed_conf = json.load(f)
+                click.echo("Using deployment status file at %s" % default_status_path)
+        except ValueError:
+            pass
 
         if STACK_RESOURCES in parsed_conf:
             self.deployed_resource_config = parsed_conf[STACK_RESOURCES]
@@ -185,12 +184,12 @@ class StackApi(object):
         if job_id:
             click.echo("Updating Job: %s" % resource_id)
             self.jobs_client.reset_job({'job_id': job_id, 'new_settings': job_settings})
-            click.echo("Link: %s/#job/%s" % (self.api_client.host, str(job_id)))
+            click.echo("Link: %s#job/%s" % (self.host, str(job_id)))
         else:
             click.echo("Creating Job: %s" % resource_id)
             job_id = self.jobs_client.create_job(job_settings)['job_id']
-            click.echo("%s Created with ID %s. Link: %s/#job/%s" % (
-                resource_id, str(job_id), self.api_client.host, str(job_id)))
+            click.echo("%s Created with ID %s. Link: %s#job/%s" % (
+                resource_id, str(job_id), self.host, str(job_id)))
 
         deploy_output = self.jobs_client.get_job(job_id)
 
