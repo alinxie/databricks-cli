@@ -66,11 +66,11 @@ class ApiClient(object):
                  apiVersion=version.API_VERSION, default_headers={}, verify=True, command_name=""):
         if host[-1] == "/":
             host = host[:-1]
-        self.host = host
+
         self.session = requests.Session()
         self.session.mount('https://', TlsV1HttpAdapter())
 
-        self.url = "%s/api/%s" % (self.host, apiVersion)
+        self.url = "%s/api/%s" % (host, apiVersion)
         if user is not None and password is not None:
             encoded_auth = (user + ":" + password).encode()
             user_header_data = "Basic " + base64.standard_b64encode(encoded_auth).decode()
