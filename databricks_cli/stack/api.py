@@ -392,16 +392,17 @@ class StackApi(object):
 
         # Deployment
         physical_id = self._get_deployed_resource(resource_id, resource_type)
-        physical_path = physical_id['path'] if 'path' in physical_id else None
+        physical_path = physical_id['path'] if physical_id and 'path' in physical_id else None
         if resource_type == WORKSPACE_TYPE:
             self.download_workspace(resource_id, resource_properties, physical_path, overwrite)
         elif resource_type == DBFS_TYPE:
             self.download_dbfs(resource_id, resource_properties, physical_path, overwrite)
 
     def download(self, filename, overwrite):
-        config_dir = os.path.dirname(os.path.abspath(filename))
+        config_filepath = os.path.abspath(filename)
+        config_dir = os.path.dirname(config_filepath)
         cli_cwd = os.getcwd()
-        parsed_conf = self._parse_config_file(config_dir)
+        parsed_conf = self._parse_config_file(config_filepath)
         os.chdir(config_dir)
         try:
             for resource in parsed_conf[STACK_RESOURCES]:
