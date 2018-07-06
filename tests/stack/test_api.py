@@ -24,12 +24,11 @@
 import os
 import json
 import mock
-from base64 import b64encode
+from requests.exceptions import HTTPError
 
 import pytest
 
 import databricks_cli.stack.api as api
-from requests.exceptions import HTTPError
 
 TEST_STACK_PATH = 'stack/stack.json'
 TEST_JOB_SETTINGS = {
@@ -89,46 +88,110 @@ class TestStackApi(object):
         os.makedirs(os.path.dirname(stack_path))
         with open(stack_path, "w+") as f:
             json.dump(TEST_STACK, f)
-        config = stack_api.parse_config_file(stack_path)
+        config = stack_api._parse_config_file(stack_path)
         assert config == TEST_STACK
 
     def test_read_status(self, stack_api, tmpdir):
         """
             Test reading and parsing a deployed stack's status JSON file.
         """
-        api.STACK_DIR = os.path.join(tmpdir.strpath, 'databricks', 'test')
-        os.makedirs(api.STACK_DIR)
-        status_path = os.path.join(api.STACK_DIR, 'test.json')
+        config_path = os.path.join(tmpdir.strpath, 'test.json')
+        status_path = os.path.join(tmpdir.strpath, 'test.deployed.json')
+        with open(config_path, "w+") as f:
+            json.dump(TEST_STACK, f)
         with open(status_path, "w+") as f:
             json.dump(TEST_STATUS, f)
-
-        status = stack_api.load_deploy_metadata('test')
+        status = stack_api._load_deploy_metadata(stack_path=config_path)
         assert status == TEST_STATUS
         assert stack_api.deployed_resource_config == TEST_STATUS[api.STACK_RESOURCES]
         assert all(resource[api.RESOURCE_ID] in stack_api.deployed_resources
                    for resource in TEST_STATUS[api.STACK_DEPLOYED])
 
+        # save_path should be an alternate to stack_path but precedence fgoes to stack_path
+        alt_status_path = os.path.join(tmpdir.strpath, 'status.json')
+        with open(alt_status_path, 'w+') as f:
+            json.dump({}, f)
+        status = stack_api._load_deploy_metadata(stack_path=config_path, save_path=alt_status_path)
+        assert status == TEST_STATUS
+        os.remove(status_path)
+        status = stack_api._load_deploy_metadata(stack_path=config_path, save_path=alt_status_path)
+        assert status == {}
+
+    def test_default_status_path(self, stack_api, tmpdir):
+        config_path = os.path.join(tmpdir.strpath, 'test.json')
+        expected_status_path = os.path.join(tmpdir.strpath, 'test.deployed.json')
+        generated_path = stack_api._generate_stack_status_path(config_path)
+        assert expected_status_path == generated_path
+
+        config_path = os.path.join(tmpdir.strpath, 'test.st-ack.json')
+        expected_status_path = os.path.join(tmpdir.strpath, 'test.st-ack.deployed.json')
+        generated_path = stack_api._generate_stack_status_path(config_path)
+        assert expected_status_path == generated_path
+
     def test_store_status(self, stack_api, tmpdir):
+        config_path = os.path.join(tmpdir.strpath, 'test.json')
+        default_path = os.path.join(tmpdir.strpath, 'test.deployed.json')
+        custom_path = os.path.join(tmpdir.strpath, 'status.json')
+        test_data = {'test': 'test'}
+        stack_api._store_deploy_metadata(config_path, test_data, custom_path)
 
-        assert True
+        status = stack_api._load_deploy_metadata(config_path)
+        assert status == test_data
 
-    def test_download_paths(self, stack_api, tmpdir):
+        os.remove(default_path)
+        status = stack_api._load_deploy_metadata(config_path, custom_path)
+        assert status == test_data
+
+    def test_relative_paths(self, stack_api, tmpdir):
         """
-            Test downloading of files to relative paths of the config template json file.
-            - stack (directory)
-              - stack.json (config file)
-              - dev (directory)
-                - a (workspace notebook)
-                - b (dbfs init script)
+            Test that the current working directory when deploying or downloading resource is same
+            as where the config path lies.
         """
-        stack_api.jobs_client = mock.MagicMock()
-        stack_api.workspace_client = mock.MagicMock()
-        assert True
+        config_working_dir = os.path.join(tmpdir.strpath, 'stack')
+        config_path = os.path.join(config_working_dir, 'test.json')
+        os.makedirs(config_working_dir)
+        with open(config_path, 'w+') as f:
+            json.dump(TEST_STACK, f)
+        initial_cwd = os.getcwd()
 
-    def test_deploy_paths(self, stack_api):
-        stack_api.jobs_client = mock.MagicMock()
-        stack_api.workspace_client = mock.MagicMock()
-        assert True
+        def _deploy_resource(resource, overwrite):
+            assert resource is not None # just to pass lint
+            assert overwrite # Just to pass lint
+            assert os.getcwd() == config_working_dir
+            return {}
+
+        def _download_resource(resource, overwrite):
+            assert resource is not None  # just to pass lint
+            assert overwrite  # Just to pass lint
+            assert os.getcwd() == config_working_dir
+
+        stack_api.deploy_resource = mock.Mock(wraps=_deploy_resource)
+        stack_api.download_resource = mock.Mock(wraps=_download_resource)
+        stack_api.deploy(config_path, True)
+        assert os.getcwd() == initial_cwd  # Make sure current working directory didn't change
+
+    def deploy_error_path(self, stack_api, tmpdir):
+        """
+            Test that an error in deployment doesn't change current working directory.
+        """
+        config_working_dir = os.path.join(tmpdir.strpath, 'stack')
+        initial_cwd = os.getcwd()
+        config_path = os.path.join(config_working_dir, 'test.json')
+        os.makedirs(config_working_dir)
+        with open(config_path, 'w+') as f:
+            json.dump({'name': 'test'}, f)
+        # No 'resources' key will cause a key error
+        try:
+            stack_api.deploy(config_path)
+        except KeyError:
+            pass
+        assert os.getcwd() == initial_cwd
+
+        try:
+            stack_api.download(config_path)
+        except KeyError:
+            pass
+        assert os.getcwd() == initial_cwd
 
     def test_deploy_job(self, stack_api):
         """
@@ -136,8 +199,6 @@ class TestStackApi(object):
         """
         job_physical_id = 12345
         job_deploy_output = {'job_id': job_physical_id, 'job_settings': TEST_JOB_SETTINGS}
-        stack_api.api_client.host = mock.MagicMock()
-        stack_api.api_client.host.return_value = ""
 
         def _get_job(job_id):
             if job_id != job_physical_id:
@@ -207,8 +268,6 @@ class TestStackApi(object):
                 # Raise an error if the workspace path isn't correct
                 raise Exception('Cant Find File')
 
-        stack_api.api_client.host = mock.MagicMock()
-        stack_api.api_client.host.return_value = ""
         stack_api.workspace_client.get_status_json = mock.Mock(wraps=_get_status_json)
         stack_api.workspace_client.import_workspace = mock.MagicMock()
         stack_api.workspace_client.import_workspace_dir = mock.MagicMock()
@@ -270,8 +329,6 @@ class TestStackApi(object):
                 raise Exception('Cant Find File')
 
         stack_api.dbfs_client.cp = mock.MagicMock()
-        stack_api.api_client.host = mock.MagicMock()
-        stack_api.api_client.host.return_value = ""
         stack_api.dbfs_client.get_status_json = mock.Mock(wraps=_get_status_json)
 
         file_properties = {'source_path': filepath, 'dbfs_path': file_dbfs_path}
@@ -290,4 +347,3 @@ class TestStackApi(object):
         assert kwargs['dst'] == dir_dbfs_path
 
         assert stack_api.dbfs_client.cp.call_count == 2
-

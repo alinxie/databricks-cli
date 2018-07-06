@@ -22,7 +22,6 @@
 # limitations under the License.
 
 import click
-import traceback
 
 from databricks_cli.utils import eat_exceptions, CONTEXT_SETTINGS
 from databricks_cli.version import print_version_callback, version
@@ -67,7 +66,6 @@ def download(api_client, config_path, overwrite):
     print('Downloading stack at: ' + config_path)
     StackApi(api_client).download(config_path, overwrite)
     print('#' * 80 + '\n')
-
 
 
 @click.group(context_settings=CONTEXT_SETTINGS,

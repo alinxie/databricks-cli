@@ -22,9 +22,5 @@
 # limitations under the License.
 
 
-class ResourceDeployException(Exception):
-    pass
-
-
-class ResourceDeployException(Exception):
+class ConfigError(Exception):
     pass

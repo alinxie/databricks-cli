@@ -191,7 +191,6 @@ def workspace_group():
     """
     pass
 
-
 workspace_group.add_command(ls_cli, name='ls')
 workspace_group.add_command(ls_cli, name='list')
 workspace_group.add_command(mkdirs_cli, name='mkdirs')

@@ -29,10 +29,6 @@ import pytest
 import databricks_cli.workspace.api as api
 from databricks_cli.workspace.api import WorkspaceFileInfo
 from databricks_cli.workspace.types import WorkspaceLanguage
-<<<<<<< HEAD
-from requests.exceptions import HTTPError
-=======
->>>>>>> databricks/master
 
 TEST_WORKSPACE_PATH = '/test/workspace/path'
 TEST_JSON_RESPONSE = {
