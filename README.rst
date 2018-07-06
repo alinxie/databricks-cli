@@ -115,24 +115,27 @@ Running a ``stack deploy`` command on a stack configuration template will "deplo
 For jobs, that means creating or updating job configurations, and for notebooks or directories in the
 workspace, that means importing them from a local location (Other sources of notebooks are WIP).
 
-At stack deploy time, a "status" JSON file for the deployment is saved locally as
-``~/databricks/stack/beta/<stack-name>.json`` (Subject to change).
+At stack deploy time, a "status" JSON file for the deployment is by default saved in the same directory as
+the stack configuration template with the name, adding ``deployed`` right before the ``.json`` extension:
+``/path/to/config.deployed.json`` (Subject to change).
 If you would like to specify another place you want the file stored, you can
-use the ``-s`` option to specify a path.
+use the ``-s`` option to specify a path. Note that the default stack file will also be stored
 
 To overwrite existing notebooks at the target path, the --overwrite flag ``-o`` must be added.
 
 .. code::
 
-    $ databricks stack deploy /path/to/config.json -s /path/to/status.json -o
+    $ databricks stack deploy -s /path/to/status.json --overwrite /path/to/config.json
     Deploying stack at: /path/to/config.json
     Deploying stack <stack-name>
 
     Deploying resource
     ...
-    Storing deploy status metadata to ~/databricks/stack/beta/<stack-name>.json
-    Storing deploy status metadata to result.json
+    Storing deploy status metadata to /path/to/config.deployed.json
+    Storing deploy status metadata to /path/to/status/json
 
+If a deploy of a single resource fails during deployment, the whole deployment halts. Note that
+stack deployment is **not atomic**. You may need to clean leaked resources on failure of deployment.
 
 Downloading a Stack
 ^^^^^^^^^^^^^^^^^^^

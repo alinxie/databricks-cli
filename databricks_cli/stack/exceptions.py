@@ -22,13 +22,5 @@
 # limitations under the License.
 
 
-<<<<<<< HEAD
 class StackError(Exception):
-=======
-class ResourceDeployException(Exception):
-    pass
-
-
-class ResourceDeployException(Exception):
->>>>>>> Changes to readme, other changes
     pass
