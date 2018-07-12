@@ -32,7 +32,7 @@ from requests.exceptions import HTTPError
 from databricks_cli.jobs.api import JobsApi
 
 from databricks_cli.workspace.api import WorkspaceApi
-from databricks_cli.workspace.types import WorkspaceFormat, WorkspaceLanguage
+from databricks_cli.workspace.types import WorkspaceLanguage
 from databricks_cli.version import version as CLI_VERSION
 from databricks_cli.configure.config import get_profile_from_context, get_config_for_profile
 from databricks_cli.stack.exceptions import StackError
@@ -274,6 +274,14 @@ class StackApi(object):
         return physical_id, deploy_output
 
     def deploy_workspace(self, resource_id, resource_properties, physical_id, overwrite):
+        """
+        Deploy workspace asset.
+        :param resource_id:
+        :param resource_properties:
+        :param physical_id:
+        :param overwrite:
+        :return:
+        """
         click.echo("Deploying workspace asset %s with properties \n%s" % (resource_id, json.dumps(
             resource_properties, indent=2, separators=(',', ': '))))
         try:
@@ -348,7 +356,6 @@ class StackApi(object):
         elif resource_service == WORKSPACE_SERVICE:
             physical_id, deploy_output = self.deploy_workspace(resource_id, resource_properties,
                                                                physical_id, overwrite)
-
         else:
             raise StackError("Resource service '%s' not supported" % resource_service)
 

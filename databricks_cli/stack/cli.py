@@ -34,29 +34,18 @@ DEBUG_MODE = True
 @click.command(context_settings=CONTEXT_SETTINGS,
                short_help='Deploy stack given a JSON configuration of the stack')
 @click.argument('config_path', type=click.Path(exists=True), required=True)
-<<<<<<< HEAD
 @click.option('--overwrite', '-o', is_flag=True, help='Include to overwrite existing notebooks in '
                                                       'the workspace.')
 @profile_option
 @eat_exceptions
 @provide_api_client
 def deploy(api_client, config_path, overwrite):
-=======
-@profile_option
-@eat_exceptions
-@provide_api_client
-def deploy(api_client, config_path):
->>>>>>> stack_deploy_jobs
     """
     Deploy a stack to the databricks workspace given a JSON stack configuration template.
     """
 
     click.echo('Deploying stack at: ' + config_path)
-<<<<<<< HEAD
     StackApi(api_client).deploy(config_path, overwrite)
-=======
-    StackApi(api_client).deploy(config_path)
->>>>>>> stack_deploy_jobs
     click.echo('#' * 80 + '\n')
 
 
