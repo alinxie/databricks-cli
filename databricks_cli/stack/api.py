@@ -30,6 +30,7 @@ import click
 
 from requests.exceptions import HTTPError
 from databricks_cli.jobs.api import JobsApi
+
 from databricks_cli.workspace.api import WorkspaceApi
 from databricks_cli.workspace.types import WorkspaceFormat, WorkspaceLanguage
 from databricks_cli.version import version as CLI_VERSION
@@ -347,6 +348,7 @@ class StackApi(object):
         elif resource_service == WORKSPACE_SERVICE:
             physical_id, deploy_output = self.deploy_workspace(resource_id, resource_properties,
                                                                physical_id, overwrite)
+
         else:
             raise StackError("Resource service '%s' not supported" % resource_service)
 
