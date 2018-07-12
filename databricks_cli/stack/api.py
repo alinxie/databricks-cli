@@ -30,6 +30,8 @@ import click
 
 from requests.exceptions import HTTPError
 from databricks_cli.jobs.api import JobsApi
+from databricks_cli.workspace.api import WorkspaceApi
+from databricks_cli.workspace.types import WorkspaceFormat, WorkspaceLanguage
 from databricks_cli.version import version as CLI_VERSION
 from databricks_cli.configure.config import get_profile_from_context, get_config_for_profile
 from databricks_cli.stack.exceptions import StackError
@@ -41,6 +43,7 @@ STACK_STATUS_INSERT = 'deployed'
 
 # Resource Services
 JOBS_SERVICE = 'jobs'
+WORKSPACE_SERVICE = 'workspace'
 
 # Config Outer Fields
 STACK_NAME = 'name'
@@ -62,6 +65,7 @@ CLI_VERSION_KEY = 'cli_version'
 class StackApi(object):
     def __init__(self, api_client):
         self.jobs_client = JobsApi(api_client)
+        self.workspace_client = WorkspaceApi(api_client)
         self.host = "/"  # default host if cannot get host.
         if click.get_current_context(silent=True):
             profile = get_profile_from_context()
@@ -188,9 +192,6 @@ class StackApi(object):
         :param status_data: Given status metadata to store.
         :return: None
         """
-        stack_file_folder = os.path.dirname(status_path)
-        if not os.path.exists(stack_file_folder):
-            os.makedirs(stack_file_folder)
         with open(status_path, 'w+') as f:
             json.dump(status_data, f, indent=2, sort_keys=True, default=self._json_type_handler)
             click.echo('Storing deployed stack status metadata to %s' % status_path)
@@ -271,7 +272,52 @@ class StackApi(object):
         deploy_output = self.jobs_client.get_job(job_id)
         return physical_id, deploy_output
 
-    def deploy_resource(self, resource):  # overwrite to be added
+    def deploy_workspace(self, resource_id, resource_properties, physical_id, overwrite):
+        click.echo("Deploying workspace asset %s with properties \n%s" % (resource_id, json.dumps(
+            resource_properties, indent=2, separators=(',', ': '))))
+        try:
+            local_path = resource_properties['source_path']
+            workspace_path = resource_properties['path']
+        except KeyError as e:
+            raise StackError("%s doesn't exist in workspace resource properties" % str(e))
+
+        lang_fmt = WorkspaceLanguage.to_language_and_format(local_path)  # Guess language and format
+        language, fmt = None, None
+        if lang_fmt:
+            language, fmt = lang_fmt
+
+        if 'language' in resource_properties:
+            language = resource_properties['language']
+        if 'format' in resource_properties:
+            fmt = resource_properties['format']
+
+        object_type = "DIRECTORY" if os.path.isdir(local_path) else "NOTEBOOK"
+        if 'object_type' in resource_properties:
+            object_type = resource_properties['object_type']
+
+        click.echo('sync %s %s to %s' % (object_type, local_path, workspace_path))
+        if object_type == 'NOTEBOOK':
+            self.workspace_client.mkdirs(
+                os.path.dirname(workspace_path))  # Make directory in workspace if not exist
+            self.workspace_client.import_workspace(local_path, workspace_path, language, fmt,
+                                                   overwrite)
+        elif object_type == 'DIRECTORY':
+            self.workspace_client.import_workspace_dir(local_path, workspace_path, overwrite,
+                                                       exclude_hidden_files=True)
+        if physical_id:
+            if 'path' not in physical_id:
+                raise StackError("Error in stored status. 'path' field not in 'physical_id' of"
+                                 "'workspace' resource.")
+            physical_path = physical_id['path']
+            if physical_path != workspace_path:
+                click.echo("Workspace asset '%s' had path changed from %s to %s" % (resource_id,
+                                                                                    physical_path,
+                                                                                    workspace_path))
+        deploy_output = self.workspace_client.get_status_json(workspace_path)
+
+        return {'path': workspace_path}, deploy_output
+
+    def deploy_resource(self, resource, overwrite):
         """
         Deploys a resource given a resource information extracted from the stack JSON configuration
         template.
@@ -298,6 +344,9 @@ class StackApi(object):
         if resource_service == JOBS_SERVICE:
             physical_id, deploy_output = self.deploy_job(resource_id, resource_properties,
                                                          physical_id)
+        elif resource_service == WORKSPACE_SERVICE:
+            physical_id, deploy_output = self.deploy_workspace(resource_id, resource_properties,
+                                                               physical_id, overwrite)
         else:
             raise StackError("Resource service '%s' not supported" % resource_service)
 
@@ -307,7 +356,7 @@ class StackApi(object):
                                 RESOURCE_DEPLOY_OUTPUT: deploy_output}
         return resource_deploy_info
 
-    def deploy(self, config_path):  # overwrite to be added
+    def deploy(self, config_path, overwrite):
         """
         Deploys a stack given stack JSON configuration template at path config_path.
 
@@ -317,6 +366,7 @@ class StackApi(object):
 
         :param config_path: Path to stack JSON configuration template. Must have the fields of
         'name', the name of the stack and 'resources', a list of stack resources.
+        :param overwrite: boolean- whether or not to overwrite existing files or
         :return: None.
         """
         config_dir = os.path.dirname(os.path.abspath(config_path))
@@ -337,7 +387,7 @@ class StackApi(object):
             for resource in parsed_conf[STACK_RESOURCES]:
                 click.echo()
                 click.echo("Deploying resource")
-                resource_status = self.deploy_resource(resource)  # overwrite to be added
+                resource_status = self.deploy_resource(resource, overwrite)  # overwrite to be added
                 deployed_resources.append(resource_status)
 
             # stack deploy status is original config with deployed resource statuses added
