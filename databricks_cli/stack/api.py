@@ -23,7 +23,6 @@
 
 import os
 import json
-import traceback
 from datetime import datetime
 import time
 import six
@@ -292,7 +291,7 @@ class StackApi(object):
 
         else:
             click.echo("Resource service not found")
-            raise StackError("Resource service '%s' not found" % resource_type)
+            raise Exception("Resource service '%s' not found" % resource_type)
 
         resource_deploy_info = {RESOURCE_ID: resource_id, RESOURCE_TYPE: resource_type}
         if six.PY3:
