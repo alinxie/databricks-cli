@@ -12,7 +12,7 @@
     },
     {
       "id": "example-job",
-      "service": "job",
+      "service": "jobs",
       "properties": {
         "name": "Stack CLI Sample Job AWS Workspace Directory",
         "new_cluster": {

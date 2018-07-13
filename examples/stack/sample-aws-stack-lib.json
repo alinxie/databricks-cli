@@ -11,7 +11,7 @@
     },
     {
       "id": "example-job",
-      "service": "job",
+      "service": "jobs",
       "properties": {
         "name": "Stack CLI Example AWS Library Job",
         "libraries": [

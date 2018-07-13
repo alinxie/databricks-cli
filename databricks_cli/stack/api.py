@@ -291,8 +291,8 @@ class StackApi(object):
             physical_id = {'path': physical_path}
 
         else:
-            click.echo("Resource type not found")
-            return None
+            click.echo("Resource service not found")
+            raise StackError("Resource service '%s' not found" % resource_type)
 
         resource_deploy_info = {RESOURCE_ID: resource_id, RESOURCE_TYPE: resource_type}
         if six.PY3:
