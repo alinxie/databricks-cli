@@ -11,7 +11,7 @@ Example Config Template
       "resources": [
         {
           "id": "job1",
-          "type": "workspace",
+          "service": "workspace",
           "properties": {
             "source_path": "dev/job1.py",
             "workspace_path": "/Users/example@example.com/dev/job1",
@@ -22,7 +22,7 @@ Example Config Template
         },
         {
           "id": "example directory",
-          "type": "workspace",
+          "service": "workspace",
           "properties": {
             "source_path": "prod",
             "workspace_path": "/Users/example@example.com/example_dir",
@@ -31,7 +31,7 @@ Example Config Template
         },
         {
           "id": "job1 in dbfs",
-          "type": "dbfs",
+          "service": "dbfs",
           "properties": {
             "source_path": "dev/job1.py",
             "dbfs_path": "dbfs:/example_dbfs_dir/job1.py"
@@ -39,7 +39,7 @@ Example Config Template
         },
         {
           "id": "client job test 1",
-          "type": "job",
+          "service": "job",
           "properties": {
             "name": "Client job test 1",
             "new_cluster": {
@@ -63,7 +63,7 @@ Example Config Template
         },
         {
           "id": "client job test 2",
-          "type": "job",
+          "service": "job",
           "properties": {
             "name": "client job test 2",
             "new_cluster": {
@@ -95,60 +95,31 @@ Resource Fields
 ---------------
 ``"id"``: REQUIRED- This is a unique stack identifier of the resource that the stack will use
 
-``"type"``: ``"job"|"workspace"``- REQUIRED- The type of databricks resource that this resource is.
+``"service"``: ``"job"|"workspace"``- REQUIRED- The databricks service a resource is associated with.
 
 ``"properties"``: REQUIRED- This is a JSON object of properties related to the resource and is different
 depending on the type of resource
 
-Job Resource Properties
-^^^^^^^^^^^^^^^^^^^^^^^
-JSON object of the Databricks `JobSettings <https://docs.databricks.com/api/latest/jobs.html#jobsettings>`_ REST API data structure.
-
-
-Workspace Resource Properties
+Resource Service "properties"
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-``"source_path"``: REQUIRED- Local source path of Workspace notebooks or directories.
-
-``"path"``: REQUIRED- Matching remote Workspace paths of notebooks or directories.
-
-``"object_type"``: ``"NOTEBOOK"|"DIRECTORY"`` REQUIRED- This specifies the whether a notebook or directory
-is being managed by the stack. This corresponds with the `ObjectType <https://docs.databricks.com/api/latest/workspace.html#objecttype>`_
-REST API data structure.
-
-``"language"``: ``"SCALA"|"PYTHON"|"SQL"|"R"`` OPTIONAL- This is the language of the notebook and should
-only be specified if ``"object_type=="NOTEBOOK"``. This corresponds with the Databricks `Language <https://docs.databricks.com/api/latest/workspace.html#language>`_
-REST API data structure. If not provided, the language will be inferred from the file extension.
-
-``"format"``: ``"SOURCE"|"DBC"|"HTML"|"IPYNB"`` OPTIONAL- This is the export format of the notebook.
-This corresponds with the Databricks `ExportFormat <https://docs.databricks.com/api/latest/workspace.html#exportformat>`_ REST API data structure.
-If not provided, will default to ``"SOURCE"``.
-
-DBFS Resource Properties
-^^^^^^^^^^^^^^^^^^^^^^^^
-``"source_path"``: REQUIRED- Local source path of DBFS files or directories.
-
-``"dbfs_path"``: REQUIRED- Matching remote DBFS path. MUST start with ``dbfs:/`` (ex. ``dbfs:/this/is/a/sample/path``)
-
-REST API Alignment Table
-^^^^^^^^^^^^^^^^^^^^^^^^^
 
 +------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------+
-| Resource Service | Properties Aligned with REST API                                                                                                                                                                                                                                                                                      | Properties Unaligned with REST API                                                                          |
+| "service         | "properties" Aligned with REST API                                                                                                                                                                                                                                                                                    | Properties Unaligned with REST API                                                                          |
 +==================+=======================================================================================================================================================================================================================================================================================================================+=============================================================================================================+
 | "workspace"      | ``"path"``: REQUIRED- Matching remote Workspace paths of notebooks or directories.                                                                                                                                                                                                                                    | ``"source_path"``: REQUIRED- Local source path of Workspace notebooks or directories.                       |
 |                  |                                                                                                                                                                                                                                                                                                                       |                                                                                                             |
-|                  | ``"object_type"``: ``"NOTEBOOK"|"DIRECTORY"`` REQUIRED- This specifies the whether a notebook or directory is being managed by the stack. This corresponds with the `ObjectType <https://docs.databricks.com/api/latest/workspace.html#objecttype>`_ REST API data structure.                                         |                                                                                                             |
+|                  | ``"object_type"``: ``"NOTEBOOK|DIRECTORY"`` REQUIRED- This specifies the whether a notebook or directory is being managed by the stack. This corresponds with the `ObjectType <https://docs.databricks.com/api/latest/workspace.html#objecttype>`_ REST API data structure.                                           |                                                                                                             |
 |                  |                                                                                                                                                                                                                                                                                                                       |                                                                                                             |
-|                  | ``"language"``: ``"SCALA"|"PYTHON"|"SQL"|"R"`` OPTIONAL- This is the language of the notebook and should only be specified if ``"object_type=="NOTEBOOK"``. This corresponds with the Databricks `Language <https://docs.databricks.com/api/latest/workspace.html#language>`_                                         |                                                                                                             |
+|                  | ``"language"``: ``"SCALA|PYTHON|SQL|R"`` OPTIONAL- This is the language of the notebook and should only be specified if ``"object_type=="NOTEBOOK"``. This corresponds with the Databricks `Language <https://docs.databricks.com/api/latest/workspace.html#language>`_                                               |                                                                                                             |
 |                  | REST API data structure. If not provided, the language will be inferred from the file extension.                                                                                                                                                                                                                      |                                                                                                             |
 |                  |                                                                                                                                                                                                                                                                                                                       |                                                                                                             |
-|                  | ``"format"``: ``"SOURCE"|"DBC"|"HTML"|"IPYNB"`` OPTIONAL- This is the export format of the notebook. This corresponds with the Databricks `ExportFormat <https://docs.databricks.com/api/latest/workspace.html#exportformat>`_ REST API data structure. If not provided, will default to ``"SOURCE"``.                |                                                                                                             |
+|                  | ``"format"``: ``"SOURCE|DBC|HTML|IPYNB"`` OPTIONAL- This is the export format of the notebook. This corresponds with the Databricks `ExportFormat <https://docs.databricks.com/api/latest/workspace.html#exportformat>`_ REST API data structure. If not provided, will default to ``"SOURCE"``.                      |                                                                                                             |
 +------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------+
 | "jobs"           | Any setting in `JobSettings <https://docs.databricks.com/api/latest/jobs.html#jobsettings>`_ REST API data structure. The following two are required:                                                                                                                                                                 | None                                                                                                        |
 |                  |                                                                                                                                                                                                                                                                                                                       |                                                                                                             |
-|                  | ``"existing_cluster_id"`` OR ``"new_cluster"``: REQUIRED- Either cluster settings of a new cluster or the cluster_id of an existing cluster                                                                                                                                                                           |                                                                                                             |
+|                  | ``"existing_cluster_id"`` OR ``"new_cluster"``: REQUIRED- Either `NewCluster <https://docs.databricks.com/api/latest/jobs.html#jobsettings>`_ JSON of a new cluster or string of cluster_id of an existing cluster                                                                                                    |                                                                                                             |
 |                  |                                                                                                                                                                                                                                                                                                                       |                                                                                                             |
-|                  | ``"name"``: REQUIRED- Name of the job to be deployed. In the REST API this is not required, but if not provided, a StackError will be raised.                                                                                                                                                                         |                                                                                                             |
+|                  | ``"name"``: REQUIRED- Name of the job to be deployed. In the REST API this is not required, but for purposes of not creating too many duplicate jobs, we are enforcing unique names in stack deployed jobs                                                                                                            |                                                                                                             |
 +------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------+
 | "dbfs"           | ``"path"``: REQUIRED- Matching remote DBFS path. MUST start with ``dbfs:/`` (ex. ``dbfs:/this/is/a/sample/path``)                                                                                                                                                                                                     | ``"source_path"``: REQUIRED- Local source path of DBFS files or directories.                                |
 +------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------+

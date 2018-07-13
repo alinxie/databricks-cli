@@ -3,16 +3,16 @@
   "resources": [
     {
       "id": "example-dir",
-      "type": "workspace",
+      "service": "workspace",
       "properties": {
         "source_path": "prod",
-        "workspace_path": "/Shared/stack-cli-examples/prod",
+        "path": "/Shared/stack-cli-examples/prod",
         "object_type": "DIRECTORY"
       }
     },
     {
       "id": "example-job",
-      "type": "job",
+      "service": "job",
       "properties": {
         "name": "Stack CLI Sample Job AWS Workspace Directory",
         "new_cluster": {

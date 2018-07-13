@@ -41,6 +41,7 @@ MS_SEC = 1000
 # Resource Services
 JOBS_SERVICE = 'jobs'
 WORKSPACE_SERVICE = 'workspace'
+DBFS_TYPE = 'dbfs'
 
 # Config Outer Fields
 STACK_NAME = 'name'

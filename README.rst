@@ -52,7 +52,7 @@ The Databricks Stack CLI will allow management and deployment of Databricks reso
 Libraries, Clusters) through a clearly defined JSON configuration template. The feature is currently
 in prototype stage and can be tried out by installing the CLI from thegithub repository. It is
 recommended that this is done within an isolated environment with a tool like
-[virtualenv](https://virtualenv.pypa.io/en/stable/) . After installing your own environment you can run
+`virtualenv <https://virtualenv.pypa.io/en/stable/>`_ . After installing your own environment you can run
 the following commands:
 
 .. code::
@@ -118,21 +118,18 @@ workspace, that means importing them from a local location (Other sources of not
 At stack deploy time, a "status" JSON file for the deployment is by default saved in the same directory as
 the stack configuration template with the name, adding ``deployed`` right before the ``.json`` extension:
 ``/path/to/config.deployed.json`` (Subject to change).
-If you would like to specify another place you want the file stored, you can
-use the ``-s`` option to specify a path. Note that the default stack file will also be stored
 
-To overwrite existing notebooks at the target path, the --overwrite flag ``-o`` must be added.
+To overwrite existing workspace or dbfs notebooks and directories at the target path, the --overwrite flag ``-o`` must be added.
 
 .. code::
 
-    $ databricks stack deploy -s /path/to/status.json --overwrite /path/to/config.json
+    $ databricks stack deploy --overwrite /path/to/config.json
     Deploying stack at: /path/to/config.json
     Deploying stack <stack-name>
 
     Deploying resource
     ...
     Storing deploy status metadata to /path/to/config.deployed.json
-    Storing deploy status metadata to /path/to/status/json
 
 If a deploy of a single resource fails during deployment, the whole deployment halts. Note that
 stack deployment is **not atomic**. You may need to clean leaked resources on failure of deployment.
