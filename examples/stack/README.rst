@@ -39,7 +39,7 @@ Example Config Template
         },
         {
           "id": "client job test 1",
-          "service": "job",
+          "service": "jobs",
           "properties": {
             "name": "Client job test 1",
             "new_cluster": {
@@ -63,7 +63,7 @@ Example Config Template
         },
         {
           "id": "client job test 2",
-          "service": "job",
+          "service": "jobs",
           "properties": {
             "name": "client job test 2",
             "new_cluster": {
