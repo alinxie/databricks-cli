@@ -359,6 +359,7 @@ class StackApi(object):
         click.echo('sync %s %s to %s' % (object_type, local_path, workspace_path))
         if object_type == 'NOTEBOOK':
             try:
+                os.makedirs(os.path.dirname(os.path.abspath(local_path)))
                 self.workspace_client.export_workspace(workspace_path, local_path, fmt, overwrite)
             except LocalFileExistsException:
                 click.echo('{} already exists locally as {}. Skip.'.format(workspace_path,
