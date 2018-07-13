@@ -3,10 +3,10 @@
   "resources": [
     {
       "id": "example-notebook",
-      "type": "workspace",
+      "service": "workspace",
       "properties": {
         "source_path": "dev/notebook1.py",
-        "workspace_path": "/Shared/stack-cli-examples/dev/notebook",
+        "path": "/Shared/stack-cli-examples/dev/notebook",
         "language": "PYTHON",
         "format": "SOURCE",
         "object_type": "NOTEBOOK"
@@ -14,7 +14,7 @@
     },
     {
       "id": "example-job",
-      "type": "job",
+      "service": "job",
       "properties": {
         "name": "Stack CLI Example AWS Notebook Job",
         "new_cluster": {

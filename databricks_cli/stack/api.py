@@ -51,7 +51,7 @@ MS_SEC = 1000
 
 # Resource Types
 WORKSPACE_TYPE = 'workspace'
-JOBS_TYPE = 'job'
+JOBS_TYPE = 'jobs'
 DBFS_TYPE = 'dbfs'
 CLUSTERS_TYPE = 'cluster'
 
@@ -62,7 +62,7 @@ STACK_DEPLOYED = 'deployed'
 
 # Resource Fields
 RESOURCE_ID = 'id'
-RESOURCE_TYPE = 'type'
+RESOURCE_TYPE = 'service'
 RESOURCE_PROPERTIES = 'properties'
 
 # Deployed Resource Fields
@@ -75,7 +75,7 @@ class StackApi(object):
         self.jobs_client = JobsApi(api_client)
         self.workspace_client = WorkspaceApi(api_client)
         self.dbfs_client = DbfsApi(api_client)
-        self.host = "host/"
+        self.host = "/"
         if click.get_current_context(silent=True):
             profile = get_profile_from_context()
             config = get_config_for_profile(profile)
@@ -203,7 +203,7 @@ class StackApi(object):
             resource_properties, indent=2, separators=(',', ': '))))
         try:
             local_path = self._validate_source_path(resource_properties['source_path'])
-            workspace_path = resource_properties['workspace_path']
+            workspace_path = resource_properties['path']
         except KeyError as e:
             raise ConfigError("%s doesn't exist in workspace resource properties" % str(e))
 
@@ -243,7 +243,7 @@ class StackApi(object):
             resource_properties, indent=2, separators=(',', ': '))))
         try:
             local_path = self._validate_source_path(resource_properties['source_path'])
-            dbfs_path = resource_properties['dbfs_path']
+            dbfs_path = resource_properties['path']
         except KeyError as e:
             raise ConfigError("%s doesn't exist in dbfs resource properties" % str(e))
 
@@ -340,7 +340,7 @@ class StackApi(object):
             resource_properties, indent=2, separators=(',', ': '))))
         try:
             local_path = self._validate_source_path(resource_properties['source_path'])
-            workspace_path = resource_properties['workspace_path']
+            workspace_path = resource_properties['path']
         except KeyError as e:
             raise ConfigError("%s doesn't exist in resource config" % str(e))
 
@@ -371,7 +371,7 @@ class StackApi(object):
             resource_properties, indent=2, separators=(',', ': '))))
         try:
             local_path = self._validate_source_path(resource_properties['source_path'])
-            dbfs_path = resource_properties['dbfs_path']
+            dbfs_path = resource_properties['path']
         except KeyError as e:
             raise ConfigError("%s doesn't exist in dbfs resource properties" % str(e))
 
