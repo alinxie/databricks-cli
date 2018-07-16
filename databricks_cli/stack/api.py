@@ -365,6 +365,9 @@ class StackApi(object):
         Given a path to the stack configuration template JSON file, generates a path to where the
         deployment status JSON will be stored after successful deployment of the stack.
 
+        :param stack_path: Path to the stack config template JSON file
+        :return: The path to the stack status file.
+
         >>> self._generate_stack_status_path('./stack.json')
         './stack.deployed.json'
         """
