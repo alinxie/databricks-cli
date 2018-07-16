@@ -162,8 +162,8 @@ class StackApi(object):
         physical_id = resource_status[RESOURCE_PHYSICAL_ID] if resource_status else None
 
         if resource_service == JOBS_SERVICE:
-            click.echo("Deploying job '%s' with properties: \n%s \n" % (resource_id, json.dumps(
-                resource_properties, indent=2, separators=(',', ': '))), nl=False)
+            click.echo("Deploying job '%s' with properties: \n%s" % (resource_id, json.dumps(
+                resource_properties, indent=2, separators=(',', ': '))))
             physical_id, deploy_output = self._deploy_job(resource_properties,
                                                           physical_id)
         elif resource_service == WORKSPACE_SERVICE:
@@ -171,7 +171,7 @@ class StackApi(object):
                 "Deploying workspace asset %s with properties \n%s" % (resource_id, json.dumps(
                     resource_properties, indent=2, separators=(',', ': '))))
             physical_id, deploy_output = self._deploy_workspace(resource_properties,
-                                                               physical_id, overwrite)
+                                                                physical_id, overwrite)
         else:
             raise StackError("Resource service '%s' not supported" % resource_service)
 
@@ -254,10 +254,15 @@ class StackApi(object):
     def _deploy_workspace(self, resource_properties, physical_id, overwrite):
         """
         Deploy workspace asset.
-        :param resource_properties:
-        :param physical_id:
-        :param overwrite:
-        :return:
+
+        :param resource_properties: dict of properties for the workspace asset. Must contain the
+        'source_path' and 'path' fields. The other fields will be inferred if not provided.
+        :param physical_id: dict containing physical identifier of workspace asset on databricks.
+        Should contain the field 'path'.
+        :param overwrite: Whether or not to overwrite the contents of workspace notebooks.
+        :return: (dict, dict) of (physical_id, deploy_output). physical_id is the physical ID for
+        the stack status that contains the workspace path of the notebook or directory on datbricks.
+        deploy_output. Is the initial information about the asset on databricks at deploy time.
         """
         try:
             local_path = resource_properties['source_path']
@@ -270,6 +275,7 @@ class StackApi(object):
         if lang_fmt:
             language, fmt = lang_fmt
 
+        # Plug in optional properties.
         if 'language' in resource_properties:
             language = resource_properties['language']
         if 'format' in resource_properties:
@@ -290,6 +296,7 @@ class StackApi(object):
                                                        exclude_hidden_files=True)
 
         if physical_id and physical_id['path'] != workspace_path:
+            # Alert if last deployment
             click.echo("Workspace asset had path changed from %s to %s" % (physical_id['path'],
                                                                            workspace_path))
         deploy_output = self.workspace_client.get_status_json(workspace_path)
