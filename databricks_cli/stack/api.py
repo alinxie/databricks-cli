@@ -162,7 +162,7 @@ class StackApi(object):
                                                               physical_id)
         elif resource_service == WORKSPACE_SERVICE:
             click.echo(
-                "Deploying workspace asset %s with properties \n{}".format(resource_id, json.dumps(
+                "Deploying workspace asset '{}' with properties \n{}".format(resource_id, json.dumps(
                     resource_properties, indent=2, separators=(',', ': '))))
             new_physical_id, deploy_output = self._deploy_workspace(resource_properties,
                                                                     physical_id, overwrite)
@@ -212,7 +212,7 @@ class StackApi(object):
         :return: job_id, Physical ID of job on Databricks server.
         """
         if 'name' not in job_settings:
-            raise StackError("Please supply 'name' in job resource 'resource_properties'")
+            raise StackError("Please supply 'name' in job resource 'properties'")
         job_name = job_settings.get('name')
         jobs_same_name = self.jobs_client._list_jobs_by_name(job_name)
         if len(jobs_same_name) > 1:
@@ -279,7 +279,7 @@ class StackApi(object):
         if 'object_type' in resource_properties:
             object_type = resource_properties['object_type']
 
-        click.echo('sync %s %s to %s' % (object_type, local_path, workspace_path))
+        click.echo('sync {} {} to {}'.format(object_type, local_path, workspace_path))
         if object_type == 'NOTEBOOK':
             self.workspace_client.mkdirs(
                 os.path.dirname(workspace_path))  # Make directory in workspace if not exist
@@ -290,9 +290,9 @@ class StackApi(object):
                                                        exclude_hidden_files=True)
 
         if physical_id and physical_id['path'] != workspace_path:
-            # Alert if last deployment
-            click.echo("Workspace asset had path changed from %s to %s" % (physical_id['path'],
-                                                                           workspace_path))
+            # Alert if last deployment's path differs from this one.
+            click.echo("Workspace asset had path changed from {} to {}".format(physical_id['path'],
+                                                                               workspace_path))
         deploy_output = self.workspace_client.get_status_json(workspace_path)
 
         return {'path': workspace_path}, deploy_output
