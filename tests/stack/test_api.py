@@ -126,33 +126,13 @@ class TestStackApi(object):
         os.makedirs(config_working_dir)
         with open(config_path, 'w+') as f:
             json.dump(TEST_STACK, f)
-        initial_cwd = os.getcwd()
 
-        def _deploy_resource(resource, stack_status):
+        def _deploy_resource(resource, stack_status, overwrite):
             assert os.getcwd() == config_working_dir
             return TEST_JOB_STATUS
 
         stack_api._deploy_resource = mock.Mock(wraps=_deploy_resource)
         stack_api.deploy(config_path)
-        assert os.getcwd() == initial_cwd  # Make sure current working directory didn't change
-
-    def test_deploy_error_path(self, stack_api, tmpdir):
-        """
-            An error in deployment should not change current working directory.
-        """
-        config_working_dir = os.path.join(tmpdir.strpath, 'stack')
-        initial_cwd = os.getcwd()
-        config_path = os.path.join(config_working_dir, 'test.json')
-        os.makedirs(config_working_dir)
-        with open(config_path, 'w+') as f:
-            json.dump({'name': 'test'}, f)
-        # No 'resources' key will cause a stack error
-        try:
-            stack_api.deploy(config_path)
-            assert False
-        except StackError:
-            pass
-        assert os.getcwd() == initial_cwd
 
     def test_deploy_job(self, stack_api):
         """
