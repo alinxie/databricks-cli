@@ -274,9 +274,11 @@ class StackApi(object):
         click.echo('sync {} {} to {}'.format(object_type, local_path, workspace_path))
         if object_type == 'NOTEBOOK':
             # Optional fields only for notebooks.
-            language = resource_properties.get('language')  # Default to None if not found.
-            fmt = resource_properties.get('format')  # Default to None if not found.
-            language, fmt = self._infer_notebook_lang_fmt(local_path, language, fmt)
+            lang_fmt = WorkspaceLanguage.to_language_and_format(local_path)
+            if lang_fmt is None:
+                raise StackError("Workspace Notebook language and format cannot be inferred"
+                                 "Please check file extension of notebook file.")
+            language, fmt = lang_fmt
             # Deployment
             self.workspace_client.mkdirs(
                 os.path.dirname(workspace_path))  # Make directory in workspace if not exist
@@ -296,35 +298,6 @@ class StackApi(object):
         deploy_output = self.workspace_client.client.get_status(workspace_path)
 
         return new_physical_id, deploy_output
-
-    @staticmethod
-    def _infer_notebook_lang_fmt(local_path, language=None, fmt=None):
-        """
-        Static method that infers the language and format of a local workspace path along with
-        verification of optional language and format given in input.
-
-        :raises: StackError: When language and format cannot be inferred and are not provided
-        in the function.
-        :param local_path:
-        :param language:
-        :param fmt:
-        :return:
-        """
-        lang_fmt = WorkspaceLanguage.to_language_and_format(local_path)  # infer language and format
-        if lang_fmt is None:
-            if language is None:
-                raise StackError("Field 'language' not provided and cannot be inferred")
-            if fmt is None:
-                raise StackError("Field 'format' not provided and cannot be inferred")
-        else:
-            detected_language, detected_fmt = lang_fmt
-            if language is None:
-                click.echo("Field 'language' inferred as {}".format(detected_language))
-                language = detected_language
-            if fmt is None:
-                click.echo("Field 'format' inferred as {}".format(detected_fmt))
-                fmt = detected_fmt
-        return language, fmt
 
     def _validate_config(self, stack_config):
         """
