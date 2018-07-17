@@ -159,13 +159,15 @@ class StackApi(object):
             click.echo("Deploying job '{}' with properties: \n{}".format(resource_id, json.dumps(
                 resource_properties, indent=2, separators=(',', ': '))))
             new_physical_id, deploy_output = self._deploy_job(resource_properties,
-                                                              physical_id, **kwargs)
+                                                              physical_id)
         elif resource_service == WORKSPACE_SERVICE:
             click.echo(
                 "Deploying workspace asset '{}' with properties \n{}".format(resource_id, json.dumps(
                     resource_properties, indent=2, separators=(',', ': '))))
+
             new_physical_id, deploy_output = self._deploy_workspace(resource_properties,
-                                                                    physical_id, **kwargs)
+                                                                    physical_id,
+                                                                    **kwargs)
         else:
             raise StackError("Resource service '{}' not supported".format(resource_service))
 
@@ -245,10 +247,11 @@ class StackApi(object):
         click.echo("Updating Job")
         self.jobs_client.reset_job({'job_id': job_id, 'new_settings': job_settings})
 
-    def _deploy_workspace(self, resource_properties, physical_id, overwrite=False):
+    def _deploy_workspace(self, resource_properties, physical_id, overwrite=False, **kwargs):
         """
         Deploy workspace asset.
         TODO (alinxie) Change name to overwrite to be more toward overwriting exclusive resources.
+        For a notebook workspace resource, it is recommended to provide 'language' and 'format'
         :param resource_properties: dict of properties for the workspace asset. Must contain the
         'source_path' and 'path' fields. The other fields will be inferred if not provided.
         :param physical_id: dict containing physical identifier of workspace asset on databricks.
@@ -268,26 +271,13 @@ class StackApi(object):
             raise StackError("Field 'object_type' ({}) not consistent"
                              "with actual object type ({})".format(object_type, actual_object_type))
 
-        # Optional fields.
-        language = resource_properties.get('language')  # Default to None if not found.
-        fmt = resource_properties.get('format')  # Default to None if not found.
-        lang_fmt = WorkspaceLanguage.to_language_and_format(local_path)  # Guess language and format
-        if lang_fmt is None:
-            if language is None:
-                raise StackError("Field 'language' not provided and cannot be inferred")
-            if fmt is None:
-                raise StackError("Field 'format' not provided and cannot be inferred")
-        else:
-            detected_language, detected_fmt = lang_fmt
-            if language is None:
-                click.echo("Field 'language' inferred as {}".format(detected_language))
-                language = detected_language
-            if fmt is None:
-                click.echo("Field 'format' inferred as {}".format(detected_language))
-                fmt = detected_fmt
-
         click.echo('sync {} {} to {}'.format(object_type, local_path, workspace_path))
         if object_type == 'NOTEBOOK':
+            # Optional fields only for notebooks.
+            language = resource_properties.get('language')  # Default to None if not found.
+            fmt = resource_properties.get('format')  # Default to None if not found.
+            language, fmt = self._infer_notebook_lang_fmt(local_path, language, fmt)
+            # Deployment
             self.workspace_client.mkdirs(
                 os.path.dirname(workspace_path))  # Make directory in workspace if not exist
             self.workspace_client.import_workspace(local_path, workspace_path, language, fmt,
@@ -306,6 +296,35 @@ class StackApi(object):
         deploy_output = self.workspace_client.client.get_status(workspace_path)
 
         return new_physical_id, deploy_output
+
+    @staticmethod
+    def _infer_notebook_lang_fmt(local_path, language=None, fmt=None):
+        """
+        Static method that infers the language and format of a local workspace path along with
+        verification of optional language and format given in input.
+
+        :raises: StackError: When language and format cannot be inferred and are not provided
+        in the function.
+        :param local_path:
+        :param language:
+        :param fmt:
+        :return:
+        """
+        lang_fmt = WorkspaceLanguage.to_language_and_format(local_path)  # infer language and format
+        if lang_fmt is None:
+            if language is None:
+                raise StackError("Field 'language' not provided and cannot be inferred")
+            if fmt is None:
+                raise StackError("Field 'format' not provided and cannot be inferred")
+        else:
+            detected_language, detected_fmt = lang_fmt
+            if language is None:
+                click.echo("Field 'language' inferred as {}".format(detected_language))
+                language = detected_language
+            if fmt is None:
+                click.echo("Field 'format' inferred as {}".format(detected_fmt))
+                fmt = detected_fmt
+        return language, fmt
 
     def _validate_config(self, stack_config):
         """
