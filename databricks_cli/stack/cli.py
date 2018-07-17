@@ -45,7 +45,7 @@ def deploy(api_client, config_path, overwrite):
     """
 
     click.echo('Deploying stack at: ' + config_path)
-    StackApi(api_client).deploy(config_path, overwrite)
+    StackApi(api_client).deploy(config_path, overwrite=overwrite)
     click.echo('#' * 80 + '\n')
 
 

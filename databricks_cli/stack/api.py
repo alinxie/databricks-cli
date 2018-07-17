@@ -64,7 +64,7 @@ class StackApi(object):
         self.jobs_client = JobsApi(api_client)
         self.workspace_client = WorkspaceApi(api_client)
 
-    def deploy(self, config_path, overwrite=False):  # overwrite to be added
+    def deploy(self, config_path, **kwargs):  # overwrite to be added
         """
         Deploys a stack given stack JSON configuration template at path config_path.
 
@@ -82,10 +82,10 @@ class StackApi(object):
         stack_config = self._load_json(config_path)
         status_path = self._generate_stack_status_path(config_path)
         stack_status = self._load_json(status_path)
-        new_stack_status = self.deploy_config(stack_config, stack_status, overwrite)
+        new_stack_status = self.deploy_config(stack_config, stack_status, **kwargs)
         self._save_json(status_path, new_stack_status)
 
-    def deploy_config(self, stack_config, stack_status=None, overwrite=False):
+    def deploy_config(self, stack_config, stack_status=None, **kwargs):
         """
         Deploys a stack given stack JSON configuration template at path config_path.
 
@@ -120,7 +120,7 @@ class StackApi(object):
             resource_status = resource_id_to_status.get(resource_map_key) \
                 if resource_map_key in resource_id_to_status else None
             # Deploy resource, get resource_status
-            new_resource_status = self._deploy_resource(resource_config, resource_status, overwrite)
+            new_resource_status = self._deploy_resource(resource_config, resource_status, **kwargs)
             resource_statuses.append(new_resource_status)
 
         # stack deploy status is original config with deployed resource statuses added
@@ -133,7 +133,7 @@ class StackApi(object):
 
         return new_stack_status
 
-    def _deploy_resource(self, resource_config, resource_status=None, overwrite=False):
+    def _deploy_resource(self, resource_config, resource_status=None, **kwargs):
         """
         Deploys a resource given a resource information extracted from the stack JSON configuration
         template.
@@ -159,13 +159,13 @@ class StackApi(object):
             click.echo("Deploying job '{}' with properties: \n{}".format(resource_id, json.dumps(
                 resource_properties, indent=2, separators=(',', ': '))))
             new_physical_id, deploy_output = self._deploy_job(resource_properties,
-                                                              physical_id)
+                                                              physical_id, **kwargs)
         elif resource_service == WORKSPACE_SERVICE:
             click.echo(
                 "Deploying workspace asset '{}' with properties \n{}".format(resource_id, json.dumps(
                     resource_properties, indent=2, separators=(',', ': '))))
             new_physical_id, deploy_output = self._deploy_workspace(resource_properties,
-                                                                    physical_id, overwrite)
+                                                                    physical_id, **kwargs)
         else:
             raise StackError("Resource service '{}' not supported".format(resource_service))
 
@@ -245,10 +245,10 @@ class StackApi(object):
         click.echo("Updating Job")
         self.jobs_client.reset_job({'job_id': job_id, 'new_settings': job_settings})
 
-    def _deploy_workspace(self, resource_properties, physical_id, overwrite):
+    def _deploy_workspace(self, resource_properties, physical_id, overwrite=False):
         """
         Deploy workspace asset.
-
+        TODO (alinxie) Change name to overwrite to be more toward overwriting exclusive resources.
         :param resource_properties: dict of properties for the workspace asset. Must contain the
         'source_path' and 'path' fields. The other fields will be inferred if not provided.
         :param physical_id: dict containing physical identifier of workspace asset on databricks.
@@ -258,26 +258,33 @@ class StackApi(object):
         the stack status that contains the workspace path of the notebook or directory on datbricks.
         deploy_output. Is the initial information about the asset on databricks at deploy time.
         """
-        try:
-            local_path = resource_properties['source_path']
-            workspace_path = resource_properties['path']
-        except KeyError as e:
-            raise StackError("%s doesn't exist in workspace resource properties" % str(e))
+        # Required fields. TODO(alinxie) put in _validate_config
+        local_path = resource_properties.get('source_path')
+        workspace_path = resource_properties.get('path')
+        object_type = resource_properties.get('object_type')
 
+        actual_object_type = 'DIRECTORY' if os.path.isdir(local_path) else 'NOTEBOOK'
+        if object_type != actual_object_type:
+            raise StackError("Field 'object_type' ({}) not consistent"
+                             "with actual object type ({})".format(object_type, actual_object_type))
+
+        # Optional fields.
+        language = resource_properties.get('language')  # Default to None if not found.
+        fmt = resource_properties.get('format')  # Default to None if not found.
         lang_fmt = WorkspaceLanguage.to_language_and_format(local_path)  # Guess language and format
-        language, fmt = None, None
-        if lang_fmt:
-            language, fmt = lang_fmt
-
-        # Plug in optional properties.
-        if 'language' in resource_properties:
-            language = resource_properties['language']
-        if 'format' in resource_properties:
-            fmt = resource_properties['format']
-
-        object_type = "DIRECTORY" if os.path.isdir(local_path) else "NOTEBOOK"
-        if 'object_type' in resource_properties:
-            object_type = resource_properties['object_type']
+        if lang_fmt is None:
+            if language is None:
+                raise StackError("Field 'language' not provided and cannot be inferred")
+            if fmt is None:
+                raise StackError("Field 'format' not provided and cannot be inferred")
+        else:
+            detected_language, detected_fmt = lang_fmt
+            if language is None:
+                click.echo("Field 'language' inferred as {}".format(detected_language))
+                language = detected_language
+            if fmt is None:
+                click.echo("Field 'format' inferred as {}".format(detected_language))
+                fmt = detected_fmt
 
         click.echo('sync {} {} to {}'.format(object_type, local_path, workspace_path))
         if object_type == 'NOTEBOOK':
@@ -288,14 +295,17 @@ class StackApi(object):
         elif object_type == 'DIRECTORY':
             self.workspace_client.import_workspace_dir(local_path, workspace_path, overwrite,
                                                        exclude_hidden_files=True)
+        else:
+            raise StackError("Invalid value for 'object_type' field: {}".format(object_type))
 
         if physical_id and physical_id['path'] != workspace_path:
             # Alert if last deployment's path differs from this one.
             click.echo("Workspace asset had path changed from {} to {}".format(physical_id['path'],
                                                                                workspace_path))
-        deploy_output = self.workspace_client.get_status_json(workspace_path)
+        new_physical_id = {'path': workspace_path}
+        deploy_output = self.workspace_client.client.get_status(workspace_path)
 
-        return {'path': workspace_path}, deploy_output
+        return new_physical_id, deploy_output
 
     def _validate_config(self, stack_config):
         """
