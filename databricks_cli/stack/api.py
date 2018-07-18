@@ -343,7 +343,7 @@ class StackApi(object):
         except KeyError as e:
             raise ConfigError("%s doesn't exist in resource config" % str(e))
 
-        if physical_path != workspace_path:
+        if physical_path and physical_path != workspace_path:
             click.echo("Change in workspace path from deployment")
 
         if 'format' in resource_properties:
@@ -358,7 +358,9 @@ class StackApi(object):
         click.echo('sync %s %s to %s' % (object_type, local_path, workspace_path))
         if object_type == 'NOTEBOOK':
             try:
-                os.makedirs(os.path.dirname(os.path.abspath(local_path)))
+                local_dir = os.path.dirname(os.path.abspath(local_path))
+                if not os.path.exists(local_dir):
+                    os.makedirs(local_dir)
                 self.workspace_client.export_workspace(workspace_path, local_path, fmt, overwrite)
             except LocalFileExistsException:
                 click.echo('{} already exists locally as {}. Skip.'.format(workspace_path,
@@ -406,6 +408,7 @@ class StackApi(object):
         os.chdir(config_dir)
         try:
             for resource in parsed_conf[STACK_RESOURCES]:
+                click.echo()
                 self.download_resource(resource, overwrite)
             os.chdir(cli_cwd)
         except KeyError as e:
