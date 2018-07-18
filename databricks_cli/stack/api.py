@@ -500,6 +500,7 @@ class StackApi(object):
         Returns a dictionary that maps a resource's (id, service) to the resource's status
         from the last deployment
 
+<<<<<<< HEAD
         The key for this dictionary is the resource's (id, service) so that we don't load
         persisted resources with the wrong resource service.
         """
@@ -508,12 +509,76 @@ class StackApi(object):
                 resource_status
             for resource_status in stack_status.get(STACK_DEPLOYED)
         }
+=======
+        else:
+            click.echo("Resource service not found")
+            raise Exception("Resource service '%s' not found" % resource_type)
+
+        resource_deploy_info = {RESOURCE_ID: resource_id, RESOURCE_TYPE: resource_type}
+        if six.PY3:
+            resource_deploy_info['timestamp'] = datetime.now().timestamp()
+        elif six.PY2:
+            resource_deploy_info['timestamp'] = time.mktime(datetime.now().timetuple())
+        resource_deploy_info['physical_id'] = physical_id
+        resource_deploy_info['deploy_output'] = deploy_output
+        return resource_deploy_info
+
+    def deploy(self, filename, overwrite, save_status_path=None):
+        config_filepath = os.path.abspath(filename)
+        config_dir = os.path.dirname(config_filepath)
+        cli_cwd = os.getcwd()
+        if save_status_path:
+            save_status_path = os.path.abspath(save_status_path)
+        os.chdir(config_dir)  # Switch current working directory to where json is stored
+        try:
+            parsed_conf = self._parse_config_file(filename)
+            stack_name = parsed_conf['name'] if 'name' in parsed_conf else None
+
+            self._load_deploy_metadata(config_filepath, save_status_path)
+
+            deploy_metadata = {'name': stack_name, 'cli_version': CLI_VERSION}
+            click.echo('Deploying stack %s' % stack_name)
+            deploy_metadata['resources'] = parsed_conf['resources']
+            deployed_resources = []
+            if 'resources' not in parsed_conf:
+                raise ConfigError("'resources' not in configuration")
+            for resource in parsed_conf['resources']:
+                click.echo()
+                click.echo("Deploying resource")
+                deploy_status = self.deploy_resource(resource, overwrite)
+                if deploy_status:
+                    deployed_resources.append(deploy_status)
+            deploy_metadata['deployed'] = deployed_resources
+            self._store_deploy_metadata(config_filepath, deploy_metadata, save_status_path)
+            os.chdir(cli_cwd)
+        except Exception:
+            os.chdir(cli_cwd)
+            raise
+
+    def download_workspace(self, resource_id, resource_properties, physical_path, overwrite):
+        click.echo("Downloading workspace asset %s with properties \n%s" % (resource_id, json.dumps(
+            resource_properties, indent=2, separators=(',', ': '))))
+        try:
+            local_path = self._validate_source_path(resource_properties['source_path'])
+            workspace_path = resource_properties['path']
+        except KeyError as e:
+            raise ConfigError("%s doesn't exist in resource config" % str(e))
+
+        if physical_path and physical_path != workspace_path:
+            click.echo("Change in workspace path from deployment")
+
+        if 'format' in resource_properties:
+            fmt = resource_properties['format']
+        else:
+            fmt = WorkspaceFormat.SOURCE
+>>>>>>> Small changes to deploying workspace file
 
     def _generate_stack_status_path(self, stack_path):
         """
         Given a path to the stack configuration template JSON file, generates a path to where the
         deployment status JSON will be stored after successful deployment of the stack.
 
+<<<<<<< HEAD
         :param stack_path: Path to the stack config template JSON file
         :return: The path to the stack status file.
 
@@ -524,6 +589,20 @@ class StackApi(object):
         stack_path_split = stack_path.split('.')
         stack_path_split.insert(-1, stack_status_insert)
         return '.'.join(stack_path_split)
+=======
+        click.echo('sync %s %s to %s' % (object_type, local_path, workspace_path))
+        if object_type == 'NOTEBOOK':
+            try:
+                local_dir = os.path.dirname(os.path.abspath(local_path))
+                if not os.path.exists(local_dir):
+                    os.makedirs(local_dir)
+                self.workspace_client.export_workspace(workspace_path, local_path, fmt, overwrite)
+            except LocalFileExistsException:
+                click.echo('{} already exists locally as {}. Skip.'.format(workspace_path,
+                                                                           local_path))
+        elif object_type == 'DIRECTORY':
+            self.workspace_client.export_workspace_dir(workspace_path, local_path, overwrite)
+>>>>>>> Small changes to deploying workspace file
 
     def _load_json(self, path):
         """
@@ -543,9 +622,47 @@ class StackApi(object):
         """
         Writes data to a JSON file.
 
+<<<<<<< HEAD
         :param path: Path of JSON file.
         :param data: dict- data that wants to by written to JSON file
         :return: None
         """
         with open(path, 'w') as f:
             json.dump(data, f, indent=2, sort_keys=True)
+=======
+        click.echo('sync %s to %s' % (local_path, dbfs_path))
+
+    def download_resource(self, resource, overwrite):
+        try:
+            resource_id = resource[RESOURCE_ID]
+            resource_type = resource[RESOURCE_TYPE]
+            resource_properties = resource[RESOURCE_PROPERTIES]
+        except KeyError as e:
+            raise ConfigError("%s doesn't exist in resource config" % str(e))
+
+        # Deployment
+        physical_id = self._get_deployed_resource(resource_id, resource_type)
+        physical_path = physical_id['path'] if physical_id and 'path' in physical_id else None
+        if resource_type == WORKSPACE_TYPE:
+            self.download_workspace(resource_id, resource_properties, physical_path, overwrite)
+        elif resource_type == DBFS_TYPE:
+            self.download_dbfs(resource_id, resource_properties, physical_path, overwrite)
+
+    def download(self, filename, overwrite):
+        config_filepath = os.path.abspath(filename)
+        config_dir = os.path.dirname(config_filepath)
+        cli_cwd = os.getcwd()
+        parsed_conf = self._parse_config_file(config_filepath)
+        os.chdir(config_dir)
+        try:
+            for resource in parsed_conf[STACK_RESOURCES]:
+                click.echo()
+                self.download_resource(resource, overwrite)
+            os.chdir(cli_cwd)
+        except KeyError as e:
+            os.chdir(cli_cwd)
+            raise ConfigError("%s doesn't exist in config" % str(e))
+        except Exception:
+            os.chdir(cli_cwd)
+            raise
+>>>>>>> Small changes to deploying workspace file
