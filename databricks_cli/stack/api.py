@@ -28,6 +28,7 @@ import time
 import copy
 
 import click
+import datadiff
 
 from databricks_cli.jobs.api import JobsApi
 from databricks_cli.version import version as CLI_VERSION
@@ -86,6 +87,58 @@ class StackApi(object):
         os.chdir(cli_dir)
         click.echo("Saving stack status to {}".format(status_path))
         self._save_json(status_path, new_stack_status)
+
+    def describe(self, config_path):  # overwrite to be added
+        """
+        Describe a stack given stack JSON configuration template at path config_path.
+
+        Loads the JSON template as well as status JSON if stack has been deployed before.
+        Changes working directory to the same directory as where the config file is, then
+        calls on deploy_config to do the stack deployment. Finally stores the new status
+        file from the deployment.
+
+        The working directory is changed to that where the JSON template is contained
+        so that paths within the stack configuration are relative to the directory of the
+        JSON template instead of the directory where this function is called.
+
+        :param config_path: Path to stack JSON configuration template. Must have the fields of
+        'name', the name of the stack and 'resources', a list of stack resources.
+        :return: None.
+        """
+        status_path = self._generate_stack_status_path(config_path)
+        stack_status = self._load_json(status_path)
+        if not stack_status:
+            raise StackError("Status for stack at {} doesn't exist {}. Please deploy stack")
+        config_dir = os.path.dirname(os.path.abspath(config_path))
+        cli_dir = os.getcwd()
+        os.chdir(config_dir)  # Switch current working directory to where json config is stored
+        self.describe_stack(stack_status)
+        os.chdir(cli_dir)
+
+    def describe_stack(self, stack_status):
+        self._validate_status(stack_status)
+        for resource_status in stack_status.get(STACK_DEPLOYED):
+            self._describe_resource(resource_status)
+
+    def _describe_resource(self, resource_status):
+        resource_id = resource_status.get(RESOURCE_ID)
+        resource_service = resource_status.get(RESOURCE_SERVICE)
+        physical_id = resource_status.get(RESOURCE_PHYSICAL_ID)
+        initial_deploy_output = resource_status.get(RESOURCE_DEPLOY_OUTPUT)
+        if resource_service == JOBS_SERVICE:
+            job_id = physical_id['job_id']
+            deploy_output = self.jobs_client.get_job(job_id)
+        else:
+            assert False
+        diff = datadiff.diff(initial_deploy_output,
+                             deploy_output,
+                             depth=2,
+                             context=5,
+                             fromfile='Initial Properties',
+                             tofile='Current Properties')
+        click.echo("Difference Between Deploy-time properties vs current'"
+                   " properties for {} resource '{}': ".format(resource_service, resource_id))
+        click.echo(diff)
 
     def deploy_config(self, stack_config, stack_status=None):
         """

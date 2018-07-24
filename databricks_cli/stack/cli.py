@@ -48,6 +48,24 @@ def deploy(api_client, config_path):
     click.echo('#' * 80)
 
 
+@click.command(context_settings=CONTEXT_SETTINGS,
+               short_help='Deploy stack given a JSON configuration of the stack')
+@click.argument('config_path', type=click.Path(exists=True), required=True)
+@debug_option
+@profile_option
+@eat_exceptions
+@provide_api_client
+def describe(api_client, config_path):
+    """
+    Deploy a stack to the databricks workspace given a JSON stack configuration template.
+    TODO: Add option to update current configuration based on past properties.
+    """
+    click.echo('#' * 80)
+    click.echo('Describing stack at: ' + config_path)
+    StackApi(api_client).describe(config_path)
+    click.echo('#' * 80)
+
+
 @click.group(context_settings=CONTEXT_SETTINGS,
              short_help='Utility to deploy and download Databricks resource stacks.')
 @click.option('--version', '-v', is_flag=True, callback=print_version_callback,
@@ -62,3 +80,4 @@ def stack_group():
 
 
 stack_group.add_command(deploy, name='deploy')
+stack_group.add_command(describe, name='describe')
