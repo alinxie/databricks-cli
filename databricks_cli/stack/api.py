@@ -41,7 +41,7 @@ MS_SEC = 1000
 # Resource Services
 JOBS_SERVICE = 'jobs'
 WORKSPACE_SERVICE = 'workspace'
-DBFS_TYPE = 'dbfs'
+DBFS_SERVICE = 'dbfs'
 
 # Config Outer Fields
 STACK_NAME = 'name'
@@ -197,6 +197,15 @@ class StackApi(object):
             )
             overwrite = kwargs.get('overwrite_notebooks', False)
             self._download_workspace(resource_properties, overwrite)
+        elif resource_service == DBFS_SERVICE:
+            click.echo(
+                "Downloading dbfs asset '{}' with properties \n{}"
+                .format(
+                    resource_id, json.dumps(resource_properties, indent=2, separators=(',', ': '))
+                )
+            )
+            overwrite = kwargs.get('overwrite_dbfs', False)
+            self._download_dbfs(resource_properties, overwrite)
         else:
             click.echo("Resource service '{}' not supported for download. "
                        "skipping.".format(resource_service))
@@ -241,11 +250,10 @@ class StackApi(object):
         object_type = "DIRECTORY" if is_dir else "FILE"
 
         click.echo('Downloading {} from Databricks dbfs path {} to {}'.format(object_type,
-                                                                             dbfs_path,
-                                                                             local_path))
+                                                                              dbfs_path,
+                                                                              local_path))
 
         self.dbfs_client.cp(recursive=True, overwrite=overwrite, src=dbfs_path, dst=local_path)
-
 
     def _deploy_resource(self, resource_config, resource_status=None, **kwargs):
         """
@@ -285,6 +293,15 @@ class StackApi(object):
             new_physical_id, deploy_output = self._deploy_workspace(resource_properties,
                                                                     physical_id,
                                                                     overwrite)
+        elif resource_service == DBFS_SERVICE:
+            click.echo(
+                "Deploying dbfs asset '{}' with properties \n{}"
+                .format(
+                    resource_id, json.dumps(resource_properties, indent=2, separators=(',', ': '))
+                )
+            )
+            overwrite = kwargs.get('overwrite_dbfs', False)
+            new_physical_id, deploy_output = self._deploy_dbfs(resource_properties, overwrite)
         else:
             raise StackError("Resource service '{}' not supported".format(resource_service))
 
@@ -436,7 +453,7 @@ class StackApi(object):
                                                                        physical_id['path'],
                                                                        dbfs_path))
         new_physical_id = {'path': dbfs_path}
-        deploy_output = self.dbfs_client.client.get_status(DbfsPath(dbfs_path))
+        deploy_output = self.dbfs_client.client.get_status(dbfs_path)
         return new_physical_id, deploy_output
 
     def _validate_config(self, stack_config):
