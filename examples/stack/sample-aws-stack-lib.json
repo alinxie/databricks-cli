@@ -6,7 +6,8 @@
       "service": "dbfs",
       "properties": {
         "source_path": "lib/example_lib.jar",
-        "path": "dbfs:/tmp/stack-cli-examples/example_lib.jar"
+        "path": "dbfs:/tmp/stack-cli-examples/example_lib.jar",
+        "is_dir": false
       }
     },
     {

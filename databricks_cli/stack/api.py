@@ -180,8 +180,8 @@ class StackApi(object):
         Downloads a resource given a resource information extracted from the stack JSON
         configuration template.
 
-        :param resource_config: A dict of the resource with fields of RESOURCE_ID, RESOURCE_SERVICE
-        and RESOURCE_PROPERTIES.
+        :param resource_config: A dict of the resource with fields of 'id', 'service'
+        and 'properties'.
         ex. {'id': 'example-resource', 'service': 'jobs', 'properties': {...}}
         """
         resource_id = resource_config.get(RESOURCE_ID)
@@ -260,8 +260,8 @@ class StackApi(object):
         Deploys a resource given a resource information extracted from the stack JSON configuration
         template.
 
-        :param resource_config: A dict of the resource with fields of RESOURCE_ID, RESOURCE_SERVICE
-        and RESOURCE_PROPERTIES.
+        :param resource_config: A dict of the resource with fields of 'id', 'service'
+        and 'properties'.
         ex. {'id': 'example-resource', 'service': 'jobs', 'properties': {...}}
         :param resource_status: A dict of the resource's deployment info from the last
         deployment. Will be None if this is the first deployment.
@@ -301,7 +301,9 @@ class StackApi(object):
                 )
             )
             overwrite = kwargs.get('overwrite_dbfs', False)
-            new_physical_id, deploy_output = self._deploy_dbfs(resource_properties, overwrite)
+            new_physical_id, deploy_output = self._deploy_dbfs(resource_properties,
+                                                               physical_id,
+                                                               overwrite)
         else:
             raise StackError("Resource service '{}' not supported".format(resource_service))
 
@@ -436,20 +438,20 @@ class StackApi(object):
 
         return new_physical_id, deploy_output
 
-    def deploy_dbfs(self, resource_properties, physical_id, overwrite):
+    def _deploy_dbfs(self, resource_properties, physical_id, overwrite):
         local_path = resource_properties.get('source_path')
         dbfs_path = resource_properties.get('path')
         is_dir = resource_properties.get('is_dir')
 
         actual_is_dir = os.path.isdir(local_path)
-        if object_type != actual_object_type:
-            raise StackError("Field 'is_dir' ({}) not consistent"
+        if is_dir != actual_is_dir:
+            raise StackError("Field 'is_dir' ({}) not consistent "
                              "with actual value ({})".format(is_dir, actual_is_dir))
 
         self.dbfs_client.cp(recursive=True, overwrite=overwrite, src=local_path, dst=dbfs_path)
         object_type = "DIRECTORY" if is_dir else "FILE"
         if physical_id and dbfs_path != physical_id['path']:
-            click.echo('dbfs {} had path changed from {} to {}'.format(resource_id,
+            click.echo('dbfs {} had path changed from {} to {}'.format(object_type,
                                                                        physical_id['path'],
                                                                        dbfs_path))
         new_physical_id = {'path': dbfs_path}

@@ -119,11 +119,11 @@ At stack deploy time, a "status" JSON file for the deployment is by default save
 the stack configuration template with the name, adding ``deployed`` right before the ``.json`` extension:
 ``/path/to/config.deployed.json`` (Subject to change).
 
-To overwrite existing workspace or dbfs notebooks and directories at the target path, the --overwrite flag ``-o`` must be added.
+To overwrite existing workspace or dbfs notebooks and directories at the target path, the ``--overwrite-workspace`` or ``overwrite-dbfs``, respectively, should be added.
 
 .. code::
 
-    $ databricks stack deploy --overwrite /path/to/config.json
+    $ databricks stack deploy --overwrite-notebooks --overwrite-dbfs /path/to/config.json
     Deploying stack at: /path/to/config.json
     Deploying stack <stack-name>
 
@@ -133,6 +133,9 @@ To overwrite existing workspace or dbfs notebooks and directories at the target 
 
 If a deploy of a single resource fails during deployment, the whole deployment halts. Note that
 stack deployment is **not atomic**. You may need to clean leaked resources on failure of deployment.
+
+Note: When adding the overwrite option for workspace directories, overwrite is done in a recursive notebook-by-notebook basis
+instead of deleting the directory. The same applies for DBFS directories.
 
 Downloading a Stack
 ^^^^^^^^^^^^^^^^^^^
@@ -147,6 +150,8 @@ path specified in the template.
     Downloading stack <stack-name>
     ....
 
+Note: When adding the overwrite option for workspace directories, overwrite is done in a recursive notebook-by-notebook basis
+instead of deleting the directory. The same applies for DBFS directories.
 
 Workspace CLI Examples
 -----------------------
