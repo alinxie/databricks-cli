@@ -1,5 +1,5 @@
 {
-  "name": "cli-test-stack-3",
+  "name": "cli-example-lib-stack",
   "resources": [
     {
       "id": "example-library",
